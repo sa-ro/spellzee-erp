@@ -1,0 +1,17 @@
+{
+  "$comment": [
+    "Types and enums only. Must stay importable from a browser, so no `types: [node]`",
+    "and no DOM — it should compile against neither runtime's globals."
+  ],
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts", "*.ts", "*/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

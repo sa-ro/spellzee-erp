@@ -1,21 +1,26 @@
 {
+  "$comment": [
+    "Root config: shared strictness only. It compiles nothing — `files: []` and `include: []`",
+    "make it a base that apps extend, because apps/api (Node) and apps/web (Next.js) need",
+    "different module resolution, libs and JSX settings. One config cannot serve both honestly.",
+    "",
+    "No `baseUrl` and no `paths`. Cross-package imports resolve through npm workspaces, which",
+    "works at runtime as well as at compile time — `paths` is compile-time only, so tsc would",
+    "pass while node failed at import. `baseUrl` is also deprecated as of TypeScript 5.5."
+  ],
   "compilerOptions": {
     "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "lib": ["ES2022"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "baseUrl": ".",
-    "paths": {
-      "@contracts/*": ["packages/contracts/*"],
-      "@api/*": ["apps/api/src/*"]
-    }
+    "isolatedModules": true
   },
-  "include": ["apps/**/*.ts", "apps/**/*.tsx", "packages/**/*.ts"],
-  "exclude": ["node_modules", "**/dist", "**/.next", "**/build"]
+  "files": [],
+  "include": []
 }

@@ -38,6 +38,26 @@ drifts from the API silently, and nothing fails until a user sees the wrong numb
 web app never touches it, but migrations are reviewed as a first-class artefact, not as an
 implementation detail of one app.
 
+**One tsconfig per workspace, extending a shared base.** The root config compiles nothing
+(`files: []`) — it carries strictness only, because `apps/api` (Node, NodeNext, decorators) and
+`apps/web` (Next.js, Bundler resolution, DOM, JSX) genuinely need different settings. One config
+serving both would have to lie to one of them.
+
+**Cross-package imports go through npm workspaces, not tsconfig `paths`.**
+
+```ts
+import type { SessionStatus } from '@spellzee/contracts';   // resolves at runtime too
+```
+
+`paths` is a **compile-time-only** mapping: `tsc` would resolve it and `node` would fail at import,
+which is the worst kind of configuration — green locally, broken at boot. A workspace symlink
+resolves for the type checker, the bundler, ESLint's resolver and Node alike. Verified with all
+four.
+
+(`baseUrl` is also deprecated as of TypeScript 5.5 and is gone. `apps/web` keeps a single `@/*`
+alias for its own `src/` — that is Next.js convention and stays inside one package, where a bundler
+always resolves it.)
+
 ---
 
 ## `apps/api/src` — the backend

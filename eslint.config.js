@@ -65,7 +65,16 @@ export default tseslint.config(
     plugins: { import: importPlugin },
     settings: {
       'import/resolver': {
-        typescript: { alwaysTryTypes: true, project: ['./tsconfig.json'] },
+        // Each workspace has its own tsconfig — apps/api is Node, apps/web is
+        // Next.js, and the root is a base that compiles nothing.
+        typescript: {
+          alwaysTryTypes: true,
+          project: [
+            './apps/api/tsconfig.json',
+            './apps/web/tsconfig.json',
+            './packages/contracts/tsconfig.json',
+          ],
+        },
         node: true,
       },
     },
