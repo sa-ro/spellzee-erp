@@ -15,6 +15,32 @@ import js from '@eslint/js';
 import importPlugin from 'eslint-plugin-import';
 import tseslint from 'typescript-eslint';
 
+// The ten domain modules. Each one's internals are private to it; the rest of
+// the codebase sees only its index.ts.
+//
+// Without this, a modular monolith is just a monolith with folders: one command
+// imports another module's repository, the entitlement rule ends up written in
+// two places, and the boundary that justified a single deployable is gone.
+const MODULES = [
+  'identity',
+  'operations',
+  'finance',
+  'governance',
+  'academic',
+  'teacher-hr',
+  'communication',
+  'analytics',
+];
+
+const moduleEncapsulationZones = MODULES.map((owner) => ({
+  target: MODULES.filter((other) => other !== owner).map(
+    (other) => `./apps/api/src/modules/${other}`,
+  ),
+  from: `./apps/api/src/modules/${owner}`,
+  except: ['./index.ts'],
+  message: `Import from '${owner}' only through its index.ts. Its commands, queries, repository and internal types are private — reaching past the public API couples you to a layout that is free to change.`,
+}));
+
 export default tseslint.config(
   {
     ignores: [
@@ -48,6 +74,27 @@ export default tseslint.config(
         'error',
         {
           zones: [
+            // 0. Module encapsulation — each module's internals are private,
+            //    reachable only through its index.ts. Generated above.
+            ...moduleEncapsulationZones,
+
+            // 0b. Dependencies point one way: modules → platform → common.
+            //     If platform/ imports a module, the uniform write path is
+            //     coupled to one domain, and the cycle makes both untestable
+            //     in isolation.
+            {
+              target: './apps/api/src/platform',
+              from: './apps/api/src/modules',
+              message:
+                'platform/ must not import modules/. Dependencies point modules → platform → common; the write path is domain-agnostic by design.',
+            },
+            {
+              target: './apps/api/src/common',
+              from: ['./apps/api/src/modules', './apps/api/src/platform'],
+              message:
+                'common/ is a leaf — it must not import modules/ or platform/. If a helper needs domain knowledge, it is not a common helper.',
+            },
+
             // 1. modules/ must never reach the integration edge directly.
             //    A command writes an outbox row; a worker makes the call.
             //    Direct import means a third party landed in the request path.

@@ -13,9 +13,14 @@ integrations/   external edge   — the only eventually-consistent place
 workers/        separate deploy — its own entrypoint
 ```
 
-`modules/` depends on `platform/`. **`modules/` must never import from `integrations/`** — a
-command writes an outbox row and a worker makes the call. A direct import means a third party
-landed in the request path.
+Dependencies point one way: **`modules/` → `platform/` → `common/`**. `platform/` never imports a
+module (the write path is domain-agnostic); `common/` never imports either (a helper needing domain
+knowledge is not a common helper).
+
+**`modules/` must never import from `integrations/`** — a command writes an outbox row and a worker
+makes the call. A direct import means a third party landed in the request path.
+
+All of this is enforced by ESLint, not convention.
 
 ## Every state-changing command does four things in one transaction
 
@@ -30,10 +35,22 @@ audit row — and `/CLAUDE.md`'s north star, *nothing important happens invisibl
 
 ```
 <module>/
-├── commands/     one file per state change
-├── queries/      read side — no writes, no audit row
-└── api/          controller + dto/
+├── index.ts      the PUBLIC API — the only file other modules may import
+├── commands/     one file per state change          private
+├── queries/      read side — no writes, no audit row private
+└── api/          controller + dto/                   private
 ```
+
+**`index.ts` is the module boundary.** Another module importing
+`finance/finance.repository` fails the build; importing `finance` (its index) is fine. That one
+rule is what makes this a modular monolith rather than a monolith with folders — without it, the
+entitlement rule ends up written in two places and the boundary that justified a single deployable
+is gone.
+
+**Modules call each other directly through that API. There is no event bus** — entitlement and
+ownership are invariants that must hold inside one transaction, and an event bus removes the
+caller's knowledge of whether the work happened. Something genuinely fire-and-forget goes through
+the **outbox**, which is already durable.
 
 **One command per file**, so "does this follow the write path?" is answerable by reading one
 screen. `commands/` and `queries/` are separate directories but **this is not CQRS** — same

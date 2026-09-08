@@ -100,6 +100,54 @@ classes an anti-pattern for exactly this reason.
 transaction, no read store — CQRS was rejected. The split is that commands traverse the uniform
 write path and queries do not, so the folder makes the distinction visible.
 
+### How modules talk to each other
+
+This is what separates a modular monolith from a monolith with folders, so it is settled here
+rather than by whoever writes the first cross-module call.
+
+**Every module has an `index.ts`. It is the only file another module may import.**
+
+```
+modules/finance/
+├── index.ts                    ← the public API; the ONLY importable file
+├── commands/                   private
+├── queries/                    private
+├── finance.repository.ts       private
+└── finance.types.ts            private
+```
+
+ESLint enforces this: a generated zone per module makes every *other* module's directory a
+restricted target, with `index.ts` the sole exception. Reaching past it — importing
+`finance/finance.repository` from an `operations` command — fails the build.
+
+Export the smallest surface that lets a caller do its job. Everything unexported is free to be
+reorganised without touching anyone.
+
+**Modules call each other directly, through that public API. No event bus.**
+
+`operations` needs to consume entitlement, so it calls the command `finance` exports. It does not
+emit an event and hope.
+
+The reason is the same one that makes this a single deployable: **entitlement and ownership are
+invariants that span modules, and they must hold inside one transaction.** An in-process event bus
+buys decoupling and pays for it in exactly the currency this project refuses to spend — the caller
+no longer knows whether the work happened, and a failure halfway leaves the invariant broken with
+nothing to roll back. Direct calls keep the transaction boundary visible.
+
+*Reversal trigger:* a module needing to react to something without the caller caring about the
+outcome — a notification, an analytics write. That is a genuine event, and it goes through the
+**outbox**, which already exists and is already durable. Not a new bus.
+
+**Dependencies point one way:**
+
+```
+modules/  →  platform/  →  common/
+```
+
+`platform/` never imports a module: the uniform write path is domain-agnostic, and coupling it to
+one domain makes both untestable in isolation. `common/` never imports either — a helper that needs
+domain knowledge is not a common helper. Both are enforced.
+
 **Invariants that span modules live in the database, not in a shared service.** Entitlement spans
 `finance` and `operations`; capacity spans `teacher-hr` and `operations`. Those are constraints, and
 that is *why* this is one deployable rather than services.
@@ -309,7 +357,7 @@ Three layers, and they catch different things. None is a substitute for another.
 | Layer | Sees | Catches |
 |---|---|---|
 | **Hook** (`guard-invariants.js`) | file paths + text, on every Bash/Write/Edit | `await this.merithub.x()` in a command; `prisma migrate dev` without `--create-only`; a stored balance column |
-| **ESLint** | the module graph, with type information | the **import** — the step before the call; boundary violations; a floating promise |
+| **ESLint** | the module graph, with type information | the **import** — the step before the call; module encapsulation; dependency direction; a floating promise |
 | **erosion-auditor** | the diff, with reasoning | intent — a command that imports the write path and then skips its audit step |
 
 The hook cannot see an `import` statement. That is not a gap to fix in the hook; it is why ESLint
@@ -341,6 +389,10 @@ Each rule was checked against a fixture that violates it, then the fixtures were
 
 | Fixture | Result |
 |---|---|
+| An `operations` command importing `finance/finance.repository` | caught |
+| `platform/` importing a module | caught |
+| `common/` importing a module | caught |
+| An `operations` command importing `finance` via its **index.ts** | **clean** |
 | `modules/identity/commands/` importing `integrations/merithub` | caught |
 | A command importing `@prisma/client` | caught |
 | A command importing `dayjs` directly | caught |
@@ -349,6 +401,9 @@ Each rule was checked against a fixture that violates it, then the fixtures were
 | An un-awaited promise | caught |
 | `any` | caught |
 | A command importing `common/time` | clean |
+
+The fourth row is the one that matters as much as the failures: the public API has to stay usable,
+or the rule just teaches people to work around it.
 
 ### Sanctioned exemptions
 

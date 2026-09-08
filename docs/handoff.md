@@ -123,6 +123,28 @@ a transaction commits half the work and reports success).
 
 Each rule was checked against a fixture that violates it; the fixtures were then deleted.
 
+### Module encapsulation — the rule most likely to be broken first
+
+Every module has an `index.ts`, and **it is the only file another module may import**. ESLint
+generates a restricted zone per module, with `index.ts` the sole exception.
+
+```
+modules/finance/index.ts               importable
+modules/finance/finance.repository.ts  private — build fails
+```
+
+Without this a modular monolith is a monolith with folders: the entitlement rule ends up written in
+two places and the boundary that justified a single deployable is gone. Retrofitting it after forty
+files import each other's internals is expensive, which is why it is in place before any code.
+
+**Modules call each other directly through that API — there is no event bus.** Entitlement and
+ownership are invariants that must hold inside one transaction; an event bus removes the caller's
+knowledge of whether the work happened. Something genuinely fire-and-forget goes through the
+**outbox**, which already exists and is already durable.
+
+Dependencies point one way: `modules/` → `platform/` → `common/`. Both reverse directions fail the
+build.
+
 ### The Day.js rule
 
 `dayjs` may be imported **only** by `apps/api/src/common/time` and `apps/web/src/lib/format` —
