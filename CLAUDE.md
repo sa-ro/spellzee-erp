@@ -348,10 +348,17 @@ explicitly approves them.
   **Reversal trigger** section — the observable condition under which the choice stops being right.
   Without it you have recorded a preference, not a decision. Add new entries to
   [tradeoff-library.md](tradeoff-library.md) and keep its reverse index (symptom → decision) current.
-- **Open decisions stay open.** The baseline (§30) lists ~20 unresolved policy questions — SLA
-  durations, cancellation cutoff, reschedule maximums, duplicate-match confidence, capacity unit,
-  incentive formula, CRM migration boundaries. Where one blocks implementation, model it as a
-  versioned policy row with a placeholder and flag it; do not hard-code a guess as though it were decided.
+- **Open decisions stay open.** The baseline (§30) lists 21 unresolved questions. They have been
+  audited and sorted in **[`docs/open-decisions.md`](docs/open-decisions.md)** — read that before
+  any schema work. Six are **shape-blocking** and must be answered, not guessed: capacity unit,
+  fields requiring approval to edit, duplicate merge rules, teacher-vs-student technical failure,
+  the approval role set, and the Phase 1 teacher/HR minimum. Fifteen are value-blocking and become
+  flagged placeholder policy rows.
+  Two further blockers the baseline never lists: **do group classes exist in Phase 1** (it changes
+  the ledger's consumption grain), and **can a student have concurrent owners of different
+  responsibility types** (§9 lists seven; our `one_active_owner_per_student` index allows one —
+  a direct conflict).
+  Never hard-code a guess as though it were decided.
 - Raw SQL alongside Prisma is expected and correct for invariant migrations and the reporting layer.
   It is not a workaround.
 - `jsonb` is for genuinely open-ended payloads — webhook bodies, integration snapshots — not for

@@ -109,13 +109,13 @@ the key with a flagged placeholder rather than inventing a number.
 | `compensation.validity_days` | §15.6 — open |
 | `completion.max_extension_days` | §15.6 — open |
 | `absence.escalation_threshold` | §15.6 — open |
-| `sla.ticket_resolution_hours` | §20.3 — discussed as 48h, not final |
+| `sla.ticket_resolution_hours.{category}` | §20.3 — discussed as 48h, not final. **Dimensioned by ticket category** — §20.2 lists six, §20.1 lists Priority, and §30 says "ticket SLA definition**s**", plural. A single global key cannot express a per-category target. |
 | `sla.allocation_target_hours` | §30 — open |
 | `retention.session_interval_trigger` | §20.4 — e.g. every 3 sessions, configurable |
 | `duplicate.match_confidence_threshold` | §30 — open |
-| `capacity.unit` | §30 — open (hours/minutes/sessions/weighted slots) |
+| ~~`capacity.unit`~~ | **Not a policy key — it is shape, not value.** Hours vs minutes vs sessions vs weighted slots are four different *grains*, so the row would have to describe its own column type. Escalated in [`docs/open-decisions.md`](../../../../docs/open-decisions.md) as a schema blocker. Do not stub it and proceed. |
 | `capacity.target_utilization_range` | §13.5 — open, deliberately not 100% |
-| `incentive.bands` | §12.2 — open |
+| `incentive.bands` | §12.2 — open. **Phase 3, finance-owned** — do not seed in Phase 1. |
 
 ## Placeholders for open decisions
 
