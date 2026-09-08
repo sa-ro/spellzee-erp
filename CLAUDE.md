@@ -194,6 +194,13 @@ worse than reporting the failure.
 The monolith's module boundaries map one-to-one onto these. Invariants span them, which is exactly
 why they are not services.
 
+The concrete layout is in **[`docs/folder-structure.md`](docs/folder-structure.md)** — a monorepo
+(`apps/api`, `apps/web`, `packages/contracts`), with the backend split four ways: `modules/` for
+domain, `platform/` for the uniform write path, `integrations/` for the eventual-consistency edge,
+and `workers/` as a separate always-on deployable. One command per file. **Path names are
+load-bearing**: `guard-invariants.js` reads them to decide what to check, so a directory rename is
+a change to the guard.
+
 - **Identity & Master Data** — parent, student, employee, teacher, course, subject.
 - **Sales & Admissions** — leads, demos, admission context (external systems remain during transition).
 - **Student & Customer** — Student 360, enrollments, lifecycle, history.

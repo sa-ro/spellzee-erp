@@ -138,8 +138,12 @@ function checkFile(path, body) {
 
     // 5. A third-party call on the request path — decision 4 / sync-vs-async.
     //    Workers, adapters and jobs are where these calls belong, so exempt them.
-    const isWorkerPath = /(worker|processor|consumer|\.job\.|adapters?\/|infrastructure\/|clients?\/)/.test(p);
-    const isRequestPath = /(controller|resolver|\.service\.|handler|route)/.test(p);
+    const isWorkerPath = /(worker|processor|consumer|\.job\.|adapters?\/|infrastructure\/|clients?\/|integrations?\/)/.test(p);
+    // `.command.` and `commands/` matter most here: on this project the command
+    // file IS the write path, so a third-party call there is the exact thing
+    // the outbox exists to prevent. See docs/folder-structure.md.
+    const isRequestPath =
+      /(controller|resolver|\.service\.|\.command\.|\.query\.|commands?\/|queries\/|handler|route)/.test(p);
     if (!isWorkerPath && isRequestPath) {
       const directCall = /\bawait\s+[^;\n]*\b(merithub|freejump|whatsapp)[A-Za-z]*\s*\./i.exec(body);
       if (directCall) {
