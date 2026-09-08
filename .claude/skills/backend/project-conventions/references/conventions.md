@@ -69,14 +69,47 @@ _TBD — ESLint config, Prettier config, any project-specific rules._
 
 ## Libraries in use
 
+Decided before code exists. Marked **locked** where reversing is an architecture decision, not a
+preference — see `/tradeoff-library.md`.
+
+### Backend
+
 | Concern | Library | Notes |
 |---|---|---|
-| Web framework | Express (pinned) | see `nodejs-postgres-stack` |
-| DB access | _TBD_ | |
+| Web framework | **NestJS** (locked) | Chosen so the uniform write path is enforceable by convention. *(The Express entry that was here came from the generic skill's pre-project pin — superseded.)* |
+| DB access | **Prisma** (locked) | Every invariant is a hand-written SQL migration: `--create-only`, then write the constraint |
+| Migration tool | **Prisma Migrate**, `--create-only` always | The hook blocks the plain form |
+| Queue | **BullMQ on Redis** | Fed by a Postgres outbox; the row is the commitment |
+| Dates | **Day.js** + `utc` and `timezone` plugins | **Only `common/time` imports it** — see below |
 | Validation | _TBD_ (zod expected) | |
 | Logging | _TBD_ (pino expected) | |
-| Testing | _TBD_ (Vitest expected) | |
-| Migration tool | _TBD_ | |
+| Testing | _TBD_ (Vitest expected) | Real Postgres, no Testcontainers — see Local environment |
+
+### Frontend
+
+| Concern | Library | Notes |
+|---|---|---|
+| Components | **shadcn/ui** (Radix + Tailwind) | Editable source in `components/ui/`, not a dependency |
+| Data grid | **TanStack Table** | Headless — our markup, our tokens |
+| Server state | **TanStack Query** + axios | No `axiosBaseQuery`; that is RTK Query's abstraction |
+| Client state | **Zustand** | Theme, density, sidebar. **Table filters go in the URL** |
+| Forms | react-hook-form + zod | |
+| Dates | **Day.js** | Same library both sides |
+
+### The Day.js rule
+
+`dayjs`, `dayjs/plugin/utc` and `dayjs/plugin/timezone` — the plugins are required, not optional.
+
+**Only `common/time` (backend) and `lib/format` (frontend) import Day.js.** Everything else uses
+their exports.
+
+A bare `dayjs()` resolves in the *host's* local timezone — correct on a developer machine in India,
+wrong on a container running `UTC`. It produces a cutoff off by hours and raises no error. One
+import site means one place the zone is applied, and one place to change when the civil-time
+decision lands.
+
+Day.js never constructs a `tstzrange`. The overlap constraints are Postgres-side; Prisma passes
+`Date` objects and the database builds the ranges.
 
 ## Deviations from the generic stack skill
 

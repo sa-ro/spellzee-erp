@@ -195,6 +195,28 @@ hold, so a new helper has an obvious home or forces you to name a new one.
 "N hours before start", and the civil timezone is still an open decision. That arithmetic wants one
 home, not a copy in every module.
 
+**Date library: Day.js**, with the `utc` and `timezone` plugins — both required, not optional:
+
+```ts
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
+```
+
+Chosen for size (~2KB core), immutability, and one library across backend and frontend.
+
+**Only `common/time` imports Day.js.** Modules, commands and workers use its exports. This is not
+tidiness: a bare `dayjs()` resolves in the *server's* local timezone, which is right on a developer
+machine in India and wrong on a container in `UTC` — and it fails silently, producing a cutoff that
+is off by hours with no error anywhere. One import site means one place where the zone is applied,
+and one place to change when the civil-time decision lands.
+
+**Day.js does not touch `tstzrange`.** The overlap constraints are Postgres-side; Prisma passes
+`Date` objects and the database builds the ranges. Day.js is for application arithmetic — session
+length, cutoff comparison, display — never for constructing a range literal.
+
 **Constants do not live here, and there is no `constants/` directory.** The distinction matters:
 
 | Domain vocabulary → `packages/contracts/shared` | Business policy → a versioned policy row |
