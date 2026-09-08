@@ -26,8 +26,34 @@ architectural choice below trades scale for provable correctness, deliberately.
 Rejected and not up for casual revisit: microservices, Kafka, any document store as primary,
 Kubernetes, multi-region, a separate SPA, Redis as a read-through cache for domain reads.
 
-Still open (don't invent an answer — ask): cloud provider, auth provider (buy, don't build),
-object storage layout, observability vendor, WhatsApp provider.
+### Deferred infrastructure decisions — deliberately, not by oversight
+
+Deferred 2026-09-09. The user will confirm these later; **do not invent an answer, and do not
+treat the deferral as permission to guess.** None of them blocks Phase 1, which is why deferring
+costs nothing today and buys real evidence later.
+
+| Decision | Status | What unblocks it | Blocks Phase 1? |
+|---|---|---|---|
+| **Cloud provider** | Deferred | Whether Spellzee already has AWS/GCP/Azure accounts. Choose on where the company's accounts and secrets already live, not on features — the difference is not material at this scale. | **No** — Postgres runs locally; application code stays cloud-agnostic. Needed at deploy. |
+| **Auth provider** | Deferred | Staff count, parent-portal timing, budget, and what staff already sign in with (Google Workspace / Microsoft 365). | **Partly** — see below. |
+| Object storage | Deferred | Follows the cloud decision. | No — worksheets and recordings are Phase 2. |
+| Observability vendor | Deferred | Follows the cloud decision. | No — can be added at any point. |
+| WhatsApp provider | Deferred by the baseline itself | A business decision, not a technical one. | No — keep it behind a channel adapter. |
+
+**How auth is unblocked for Phase 1.** Authentication and authorization are different things, and
+only the first is bought:
+
+- **Authentication** — "who is this?" — is the provider's job, and is what is deferred.
+- **Authorization** — "what may they do?" — is **ours**, and is built now: RBAC tables,
+  maker–checker, and permission by *relationship to the student* (coordinator-of, teacher-of,
+  parent-of), all in our database.
+
+So build the RBAC schema in Phase 1 as normal, and put authentication behind an adapter — the same
+treatment WhatsApp gets. Swapping the provider later must not touch a single authorization rule. If
+it would, the boundary was drawn wrong.
+
+Until a provider is chosen, a simple session-based staff login is the placeholder. It is a
+placeholder, and should be labelled one wherever it appears — never described as the auth solution.
 
 ## The five rules that hold the design up
 

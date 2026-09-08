@@ -72,17 +72,36 @@ so it holds whether or not the relevant skill was loaded.
 
 ## Getting set up
 
-Not yet possible end to end — these are the known blockers:
+**Local database — ready.** PostgreSQL 17 installed natively on port 5433 (a PostgreSQL 16
+instance already held 5432), with `spellzee_dev` and `spellzee_test` databases, a non-superuser
+`spellzee` role, and `btree_gist` enabled. Copy `.env.example` to `.env`.
 
-- ~~PostgreSQL for tests.~~ **Done** — PostgreSQL 17 installed natively on port 5433
-  (16 already held 5432), with `spellzee_dev` / `spellzee_test` databases, a non-superuser
-  `spellzee` role, and `btree_gist` enabled. No Docker, so no Testcontainers: tests share a
-  persistent database and must clean up after themselves.
-- **Cloud provider** undecided, which also decides the managed Postgres and Redis.
-- **Auth provider** undecided, which blocks RBAC.
-- **Frontend component library, data grid and query layer** — a deliberate day-one
-  decision, not yet made. Retrofitting a table abstraction across forty screens is a real
-  cost.
+No Docker on this machine, so **no Testcontainers**: tests share a persistent database and must
+clean up after themselves — transaction rollback or truncate, never assume a clean slate.
+
+Verified against the running database rather than assumed: an `EXCLUDE USING gist` constraint
+rejects overlapping teacher sessions, and the `'[)'` half-open bound correctly allows back-to-back
+sessions.
+
+### Deferred, to be confirmed later
+
+Not blockers for Phase 1 — deferred deliberately so the decisions are made with evidence rather
+than guessed now. See `CLAUDE.md` for the full table and what unblocks each.
+
+- **Cloud provider** — application code stays cloud-agnostic; needed at deploy, not before.
+- **Auth provider** — authentication is deferred; **authorization is not**. RBAC, maker–checker
+  and permission-by-relationship are ours and get built in Phase 1. Authentication sits behind an
+  adapter, with a clearly-labelled session placeholder until a provider is chosen.
+- **Object storage**, **observability vendor** — both follow the cloud decision.
+- **WhatsApp provider** — deferred by the baseline itself; kept behind a channel adapter.
+
+### Still genuinely open
+
+- **Frontend component library, data grid and query layer** — a deliberate day-one decision for
+  the UI, not yet made. Retrofitting a table abstraction across forty screens is a real cost, so
+  this one is worth settling before `/ui-feature` runs in anger.
+- **~20 business decisions** in the baseline (§30). `scope-interrogator` exists to sort which
+  actually block Phase 1 from which can take a flagged placeholder.
 
 ## Roadmap
 
