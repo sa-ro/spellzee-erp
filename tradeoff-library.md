@@ -132,6 +132,7 @@ The same six fields, applied to the decisions actually made rather than the cano
 | 6 | Series + materialised occurrences | Series-only, computed on read | Attendance, entitlement and external IDs need stable per-occurrence identity | A horizon job to maintain; two places describing "when" | Horizon maintenance costing more than on-demand computation |
 | 7 | Never call upstream DELETE | Mirror local cancellation upstream | Their delete is irreversible and destroys attendance and recordings | Orphaned upstream objects accumulate | The provider adding a soft-delete or archive operation |
 | 8 | Allocate locally, provision asynchronously | Block allocation on the external call | Coordinator workflow must not depend on third-party availability | A four-state machine and a stall queue to watch | Stalls becoming frequent enough to need auto-remediation |
+| 9 | Few MCP servers, and only ones that cannot reach the codebase | Postgres/Prisma/filesystem MCP for convenience | The guard hook sees Bash, Write and Edit — not MCP tool calls. An MCP server that reaches the database is a path around every check | Convenience: `psql` through Bash is clunkier than a tool call | The hook learns to inspect MCP tool calls |
 
 Decisions 3 and 4 are the ones I'd defend hardest under pressure. Decision 5 is the one most likely to be argued against internally, and worth writing the ADR for first — the pressure to build a rule engine always arrives as a reasonable-sounding request.
 
@@ -217,5 +218,6 @@ The architecture is a modular monolith in a single region: one deployable backen
 | A stalled-item queue nobody reads | 7 — sync/async, and its automation trigger |
 | Procurement asking about uptime | 8 — replication posture |
 | A third "just make this configurable" request | Spellzee 5 — policy rows vs. rule engine |
+| A verification that lives in an ad-hoc query, not a test | Spellzee 9 — MCP surface |
 
 **The habit, in one line:** after every design, write down not what you chose, but *what would have to become true for you to choose differently*. If you can't answer that, the decision was inherited rather than made.

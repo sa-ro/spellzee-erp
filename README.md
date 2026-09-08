@@ -70,6 +70,12 @@ questions the textual signatures of architecture erosion — `prisma migrate dev
 `--create-only`, a Merithub delete, a stored balance column. It does not read the skills,
 so it holds whether or not the relevant skill was loaded.
 
+**No MCP servers are configured, deliberately.** The hook does not see MCP tool calls, so an MCP
+server that can reach the database or the filesystem is a path around every guard here. Figma (for
+the design tokens) and GitHub (issues, PRs) are the safe additions — neither touches the codebase.
+Postgres, Prisma and filesystem MCPs are not: see `CLAUDE.md` and decision 9 in
+`tradeoff-library.md`.
+
 ## Getting set up
 
 **Local database — ready.** PostgreSQL 17 installed natively on port 5433 (a PostgreSQL 16

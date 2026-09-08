@@ -147,6 +147,36 @@ hard-coded threshold in application code, a missing audit write. Those are seman
 `erosion-auditor` and `workflow-pre-merge-review` cover them. Three layers, not one: the hook always
 runs, the skills guide, the auditor reasons.
 
+### MCP servers — the hook's blind spot
+
+**The hook sees Bash, Write and Edit. It does not see MCP tool calls.** An MCP server that can
+reach the database or the filesystem is a path around every guard in this file:
+
+```
+Bash / Write / Edit   →  hook checks     ✓
+MCP tool call         →  hook is blind   ✗
+```
+
+So an MCP server is not a neutral convenience here. Adding one is a decision about the enforcement
+surface, and it goes in two buckets:
+
+| Safe — reads things that are not the codebase | Unwatched path — adds a way around the guards |
+|---|---|
+| **Figma** — design tokens. Needed to fill `docs/design/` | **Postgres** — `DROP CONSTRAINT` via MCP is invisible to the hook |
+| **GitHub** — issues, PRs, CI status | **Prisma** — makes bypassing `--create-only` easy, and the whole invariant strategy rests on it |
+| | **Filesystem** — duplicates Write/Edit while skipping their checks |
+
+None are configured today. When they are, prefer the left column, and treat anything in the right
+column as needing a reason beyond convenience.
+
+**On Postgres specifically:** `psql` through Bash already works, is watched by the hook, and is what
+verified this project's first exclusion constraint. Read-only credentials would stop a write, but
+not the slower problem — verification drifting out of migrations and tests and into ad-hoc queries
+nobody can replay. *Reversal trigger: the hook learns to inspect MCP tool calls.*
+
+The general rule: **every MCP server is a surface, and this project's risk is correctness, not
+scale.** Keep the count low on purpose.
+
 ## Agents and risk classes
 
 `.claude/agents/` holds the build team, split by **erosion point** rather than by lifecycle stage or
