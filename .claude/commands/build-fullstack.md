@@ -131,7 +131,7 @@ losing Stage A.
 Now connect Stage B's components to Stage A's real API.
 
 1. **`api-integration`** — wire to the actual endpoints from Stage A. Read
-   its Spellzee scoping note first: REST + axios + RTK Query, **no Firebase,
+   its Spellzee scoping note first: REST + axios + TanStack Query, **no Firebase,
    no realtime, no tenant scoping**. Screens that must feel current **poll**,
    with ETags and conditional requests.
 2. **`state-management`** — where the fetched data lives.

@@ -176,7 +176,7 @@ it. Giving the auditor write access would collapse that separation.
 ## Designed, not built (Tier 2 — once real code exists)
 
 - **`frontend-builder`** — Next.js console screens against the 28 frontend
-  skills. The stack is now settled (shadcn/ui + TanStack Table + RTK Query),
+  skills. The stack is now settled (shadcn/ui + TanStack Table + TanStack Query),
   so what remains is a scaffolded `apps/web` and an API contract to consume.
   Blocked on: the first endpoints existing.
 - **`test-hardener`** — concurrency tests, constraint coverage, failure

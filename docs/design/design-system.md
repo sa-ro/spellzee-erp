@@ -356,7 +356,7 @@ Non-negotiable, and independent of whatever values arrive from Figma:
 Recorded here so they are not settled by accident:
 
 1. ~~Component library, data grid, query layer.~~ **Decided 2026-09-09** — shadcn/ui
-   (Radix + Tailwind) with TanStack Table, RTK Query + axios for server state. Both key
+   (Radix + Tailwind) with TanStack Table and TanStack Query. Both key
    choices are headless and land in the repo, so the tokens below apply directly rather
    than through a library's theme API. See `tradeoff-library.md` decision 10.
 2. ~~Token format.~~ **Decided** — CSS custom properties, following from (1). Tailwind

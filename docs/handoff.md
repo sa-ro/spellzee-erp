@@ -72,7 +72,7 @@ the persistent test database would need updating.
 | Ticket assignment | Transfers ownership **permanently** | same |
 | One open ticket per student | New invariant, verified | invariants registry |
 | MCP servers | Few, and none that reach the codebase | `tradeoff-library.md` decision 9 |
-| Frontend stack | **shadcn/ui + TanStack Table**, RTK Query, Tailwind | `tradeoff-library.md` decision 10 |
+| Frontend stack | **shadcn/ui + TanStack Table + TanStack Query**, Zustand, Tailwind | `tradeoff-library.md` decision 10 |
 | Design tokens | Template only — every value `TBD`, format settled as CSS custom properties | `docs/design/` |
 
 ### Auth, specifically

@@ -42,8 +42,8 @@ versioned data rather than constants in code.
 TypeScript end to end. NestJS (modular monolith) · PostgreSQL 16+ · Prisma · BullMQ on
 Redis · Next.js · managed containers · single region.
 
-Frontend: **shadcn/ui + TanStack Table**, both headless with the code in-repo, plus RTK Query for
-server state. The design is custom and the tokens are still pending Figma, so a library that owns
+Frontend: **shadcn/ui + TanStack Table + TanStack Query**, all headless with the code in-repo,
+plus Zustand for the little client state that is left. The design is custom and the tokens are still pending Figma, so a library that owns
 its own theme would fight them on arrival.
 
 Still undecided: cloud provider, auth provider, object storage, observability vendor,

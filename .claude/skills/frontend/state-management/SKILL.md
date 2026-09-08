@@ -7,6 +7,26 @@ description: Use this skill whenever the user is deciding where state should liv
 
 Defines how state is categorized, structured, and synchronized across a React/Next.js app using Zustand or Redux Toolkit (chosen by project scope), RTK Query, and Firebase — so state has one source of truth and no category-mixing bugs.
 
+## Spellzee scoping (read before applying the rules below)
+
+**Step 0's "ask the user which library" is already answered here.** Do not re-open it; do not introduce Redux Toolkit alongside.
+
+| Category | Where it lives |
+|---|---|
+| Server state | **TanStack Query** — never duplicated into a client store |
+| **Table filters, sort, page** | **The URL** (`nuqs` or `useSearchParams`) |
+| Row selection, drawer/modal open | UI-local — TanStack Table's own state where it has one |
+| Theme, density, sidebar collapsed | **Zustand** — one small store |
+| Forms | `react-hook-form` + `zod`, per `form-handling-validation` |
+
+Three consequences worth stating plainly:
+
+- **Rule 3 holds, with a different tool.** "Server state → RTK Query only" reads here as "server state → TanStack Query only". The prohibition is the point: never copy fetched data into Zustand.
+- **Rule 9 (Firebase realtime) does not apply.** Firestore was rejected and there are no listeners — internal dashboards poll. See `api-integration`'s scoping note.
+- **Filters belong in the URL, not a store.** A coordinator saying *"send me that filtered list"* has to be able to paste a link, and refresh and back must both work. A filter in a Zustand store breaks all three silently.
+
+The client-global surface here is genuinely small — a handful of preferences — which is why Zustand suits it and why Redux Toolkit would be weight without a use. `tradeoff-library.md` decision 10 carries the reasoning and the reversal trigger.
+
 ## Step 0: Detect Project Context Before Applying Any Rule
 
 **Always do this first, before writing any state-management code.**

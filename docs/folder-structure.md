@@ -189,7 +189,7 @@ common/
 ## `apps/web/src` — the console
 
 Stack settled 2026-09-09: **shadcn/ui** (Radix + Tailwind) for components, **TanStack Table** for
-the grid, **RTK Query + axios** for server state. Both key choices are headless with the code in the
+the grid, **TanStack Query + axios** for server state, **Zustand** for the little client state left. Both key choices are headless with the code in the
 repo, which is what lets the still-pending Figma tokens apply directly instead of through a
 library's theme API. See `tradeoff-library.md` decision 10.
 
@@ -203,7 +203,7 @@ src/
 ├── features/                   mirrors the API's modules
 ├── components/                 presentational — props in, events out
 └── lib/
-    ├── api/                    RTK Query + axios; imports contracts
+    ├── api/                    TanStack Query + axios; imports contracts
     └── polling/                ETag-aware; no WebSockets
 ```
 

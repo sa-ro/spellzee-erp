@@ -353,7 +353,8 @@ recruitment planning. Do not optimise toward 100% utilization; management define
 |---|---|---|
 | Components | **shadcn/ui** (Radix + Tailwind) | Code lands in the repo, not `node_modules`. Tokens are CSS variables, so the Figma values swap in directly instead of going through a library's theme API |
 | Data grid | **TanStack Table** (headless) | Logic without markup — row height, density and our own tokens apply directly |
-| Server state | **RTK Query + axios** | Per `frontend/api-integration`; polling with ETags, no realtime |
+| Server state | **TanStack Query + axios** | Same ecosystem as the grid; polling with ETags, no realtime |
+| Client state | **Zustand** | Small — theme, density, sidebar. Table filters live in the **URL**, not a store |
 | Styling | **Tailwind** | Follows shadcn |
 
 Both key choices are **headless and in-repo**, and that is the point. The design is custom, the

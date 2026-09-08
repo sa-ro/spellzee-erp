@@ -33,7 +33,23 @@ Defines how the frontend fetches, mutates, caches, and stays resilient when talk
 ## Spellzee scoping (read before applying the rules below)
 
 This project's backend is **NestJS + PostgreSQL**, consumed by a Next.js
-console (and later a parent portal). Three adjustments to the rules below:
+console (and later a parent portal). Four adjustments to the rules below:
+
+- **TanStack Query, not RTK Query.** This is the largest divergence: many of
+  the rules below name RTK Query specifically. The concept in each still
+  applies — read them as *"the query layer"* and use the TanStack equivalent:
+
+  | Rule says | Here it means |
+  |---|---|
+  | RTK Query with a custom axios `baseQuery` (3) | `useQuery` / `useMutation` with a shared axios instance in `queryFn` |
+  | Cache invalidation via tags (8) | `queryClient.invalidateQueries({ queryKey })` |
+  | `keepUnusedDataFor` / `refetchOnFocus` (23) | `gcTime` / `staleTime` / `refetchOnWindowFocus` |
+  | `isLoading` vs `isFetching` (24) | same distinction, same names |
+  | Polling via `pollingInterval` | `refetchInterval` |
+
+  Chosen because the grid is TanStack Table, so it is one ecosystem rather
+  than two — and because RTK Query requires a Redux store this project has no
+  other use for. See `tradeoff-library.md` decision 10.
 
 - **No Firebase, no realtime listeners.** Firestore was explicitly rejected
   as a primary store, and persistent connections were rejected in favour of
