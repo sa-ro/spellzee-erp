@@ -11,6 +11,10 @@ modules/        domain          — the business boundary
 platform/       write path      — the correctness boundary
 integrations/   external edge   — the only eventually-consistent place
 workers/        separate deploy — its own entrypoint
+
+config/         validated env   — the ONLY place process.env is read
+health/         liveness, readiness, outbox age
+common/         helpers, named by concern
 ```
 
 Dependencies point one way: **`modules/` → `platform/` → `common/`**. `platform/` never imports a
@@ -30,6 +34,12 @@ authorize → write → audit → enqueue outbox
 
 The machinery lives in `platform/` **once**. Scattered across ten modules, the tenth forgets the
 audit row — and `/CLAUDE.md`'s north star, *nothing important happens invisibly*, is broken quietly.
+
+**The command bus opens the transaction. Nothing else does.** Every command receives the transaction
+client as a parameter; a nested command joins the caller's transaction rather than starting its own.
+That is why commands may not import `@prisma/client` — reaching for the global client silently
+starts a second transaction, and the invariant the two commands share stops being atomic. See
+`docs/folder-structure.md`, "The transaction boundary".
 
 ## Module shape
 

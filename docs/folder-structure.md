@@ -184,6 +184,51 @@ slightly differently; the tenth forgets the audit row.
 fully built; authentication sits behind this one file so swapping providers later touches nothing
 else. **Label it a placeholder wherever it appears.**
 
+### The transaction boundary — who opens it, and what happens when commands nest
+
+"One transaction" appears throughout this project. This is where it is made concrete, because the
+nesting case is unavoidable: `operations` consuming entitlement *is* a call into `finance`, and if
+both open their own transaction the invariant they share is no longer atomic.
+
+**One transaction per HTTP request, opened by the command bus. Nothing else opens one.**
+
+```
+command-bus                    ← opens the transaction, once
+  └── authorize
+  └── OperationsCommand        ← receives `tx`, never opens its own
+        └── FinanceCommand     ← receives the SAME `tx`
+  └── audit write
+  └── outbox insert
+COMMIT
+```
+
+Every command takes the transaction client as a parameter. A command that reaches for the global
+Prisma client instead has silently started a second transaction — which is why commands may not
+import `@prisma/client` at all, and ESLint enforces that.
+
+**Rules that follow:**
+
+1. **A command never calls `prisma.$transaction` itself.** If you find yourself wanting to, the work
+   belongs in one command, not two.
+2. **A nested command joins the caller's transaction.** It does not start, commit or roll back — the
+   bus owns all three. A nested command that commits leaves the outer one unable to roll back what
+   it already wrote.
+3. **The outbox row is inserted inside the transaction; the queue job is enqueued after commit.**
+   Enqueueing inside means a worker can pick up a job for a row that never lands.
+4. **Isolation is `READ COMMITTED`** (Postgres' default) plus explicit row locks where a rule reads
+   other rows to decide. The entitlement check is the live example: `SELECT ... FOR UPDATE` on the
+   subscription row before computing the balance. `SERIALIZABLE` is available if a case genuinely
+   needs it, but it is a per-case decision with a retry loop attached, not a default.
+5. **Nothing slow happens inside the transaction.** No HTTP call — that is what the outbox is for —
+   and no work that could have happened before it opened.
+
+**Read queries do not open a transaction.** A single statement is already atomic; wrapping it adds
+a boundary that means nothing and holds a connection longer.
+
+*Reversal trigger:* a legitimate need for two independent commit boundaries in one request — most
+likely a bulk operation where partial success is genuinely correct. That is a different pattern
+(per-item transactions inside a loop, with a result list), not a change to this one.
+
 ### `integrations/` — the eventual-consistency edge
 
 ```
@@ -222,6 +267,39 @@ Top-level and with its own entrypoint because it is a **different deployment uni
 workers must not scale to zero — a consumer inside a scale-to-zero service stops draining silently,
 and that is the most common way an outbox pattern dies. If workers lived under `modules/`, someone
 would eventually bundle them into the API and the failure would be invisible.
+
+### Entrypoints and lifecycle
+
+```
+apps/api/src/
+├── main.ts              the API process
+├── config/              validated env — the ONLY place process.env is read
+├── health/              liveness, readiness, outbox age
+└── workers/
+    └── worker.main.ts   a SEPARATE process, not a mode of the API
+```
+
+**Two entrypoints, deliberately.** Workers must not scale to zero — a queue consumer inside a
+scale-to-zero service stops draining when traffic stops and fails silently. Separate entrypoint,
+separate deployment, minimum instances ≥ 1.
+
+**Config is validated once at boot and the process exits on failure.** Nothing outside `config/`
+reads `process.env`. The failure this prevents is the silent kind: a missing `APP_TIMEZONE` makes
+`dayjs.tz()` fall back to the host zone, and a cancellation cutoff is quietly wrong — right on a
+laptop in India, wrong in a UTC container. A boot crash naming the variable beats a wrong
+entitlement decision.
+
+**Graceful shutdown matters more for the worker than the API.** On `SIGTERM` the worker stops
+claiming new outbox rows, finishes the one in flight, and exits. Killed mid-claim, a row is left
+`in_progress` with no process behind it — it surfaces in the stall queue as a false alarm, and a
+real stall hides among them.
+
+The API's shutdown is ordinary: stop accepting connections, drain in-flight requests, close the
+pool.
+
+**Health checks are not the outbox alert.** Liveness answers *restart me*, readiness answers *stop
+routing to me*, and neither notices a worker that is running but not draining. The check that
+matters is the **age of the oldest pending outbox row** — see `apps/api/src/health/README.md`.
 
 ### `common/` — shared helpers, named by concern
 

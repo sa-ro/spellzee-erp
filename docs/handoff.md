@@ -123,6 +123,43 @@ a transaction commits half the work and reports success).
 
 Each rule was checked against a fixture that violates it; the fixtures were then deleted.
 
+### The transaction boundary — settle this before the first command
+
+"One transaction" is said everywhere in this project; the nesting case is where it gets decided in
+practice, and it is unavoidable: `operations` consuming entitlement *is* a call into `finance`.
+
+**The command bus opens the transaction. Nothing else does.** Commands receive the transaction
+client as a parameter; a nested command joins the caller's, never starting, committing or rolling
+back its own. A command reaching for the global Prisma client has silently started a second
+transaction — which is why commands may not import `@prisma/client`, enforced by ESLint.
+
+Isolation is `READ COMMITTED` plus explicit `SELECT ... FOR UPDATE` where a rule reads other rows to
+decide (the entitlement check is the live example). Nothing slow inside the transaction — no HTTP
+call, that is the outbox's job. The outbox row is inserted inside; the queue job is enqueued after
+commit.
+
+Full reasoning in `docs/folder-structure.md`, "The transaction boundary".
+
+### Config, health and shutdown
+
+- **Nothing outside `apps/api/src/config` reads `process.env`.** Validated once at boot with zod;
+  the process exits on failure. A missing `APP_TIMEZONE` would otherwise make `dayjs.tz()` fall back
+  to the host zone and put a cancellation cutoff silently out by hours.
+- **Health checks are not the outbox alert.** Liveness means *restart me*, readiness means *stop
+  routing to me*, and neither notices a worker that is running but not draining. The check that
+  matters is the **age of the oldest pending outbox row**.
+- **Worker shutdown is the one that matters.** On `SIGTERM` it stops claiming rows, finishes the one
+  in flight, exits. Killed mid-claim it leaves a row `in_progress` with no process behind it, which
+  shows up in the stall queue as a false alarm — and a real stall hides among the false ones.
+
+### Seed and tests
+
+- **Seeded placeholder policy rows carry a `reason` saying they are placeholders.** A placeholder
+  that looks like a decision becomes one. Fifteen of them are awaiting business decisions.
+- **Tests roll back a transaction rather than truncating.** There is no Testcontainers here, so the
+  test database persists; isolation is the suite's job. Concurrency tests are the exception — they
+  need two real connections and truncate their own tables.
+
 ### Module encapsulation — the rule most likely to be broken first
 
 Every module has an `index.ts`, and **it is the only file another module may import**. ESLint
