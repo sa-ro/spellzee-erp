@@ -355,11 +355,12 @@ Non-negotiable, and independent of whatever values arrive from Figma:
 
 Recorded here so they are not settled by accident:
 
-1. **Component library, data grid, query layer.** `/CLAUDE.md` calls this a deliberate
-   day-one decision — retrofitting a table abstraction across forty screens is a real
-   cost. Still open (see `docs/open-decisions.md`).
-2. **Token format** — CSS custom properties, Tailwind config, or a theme object. Follows
-   from (1).
+1. ~~Component library, data grid, query layer.~~ **Decided 2026-09-09** — shadcn/ui
+   (Radix + Tailwind) with TanStack Table, RTK Query + axios for server state. Both key
+   choices are headless and land in the repo, so the tokens below apply directly rather
+   than through a library's theme API. See `tradeoff-library.md` decision 10.
+2. ~~Token format.~~ **Decided** — CSS custom properties, following from (1). Tailwind
+   reads them; shadcn components consume them; a Figma value swaps in one place.
 3. **Is there an existing Spellzee brand?** If the company has brand colours and fonts,
    those come first and this template inherits them. If not, the palette is designed for
    the console rather than borrowed from a marketing site.

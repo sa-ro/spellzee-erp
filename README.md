@@ -42,6 +42,10 @@ versioned data rather than constants in code.
 TypeScript end to end. NestJS (modular monolith) · PostgreSQL 16+ · Prisma · BullMQ on
 Redis · Next.js · managed containers · single region.
 
+Frontend: **shadcn/ui + TanStack Table**, both headless with the code in-repo, plus RTK Query for
+server state. The design is custom and the tokens are still pending Figma, so a library that owns
+its own theme would fight them on arrival.
+
 Still undecided: cloud provider, auth provider, object storage, observability vendor,
 WhatsApp provider. See `CLAUDE.md` for the full list and the reasoning.
 
@@ -112,9 +116,6 @@ than guessed now. See `CLAUDE.md` for the full table and what unblocks each.
 
 ### Still genuinely open
 
-- **Frontend component library, data grid and query layer** — a deliberate day-one decision for
-  the UI, not yet made. Retrofitting a table abstraction across forty screens is a real cost, so
-  this one is worth settling before `/ui-feature` runs in anger.
 - **~20 business decisions** in the baseline (§30). `scope-interrogator` exists to sort which
   actually block Phase 1 from which can take a flagged placeholder.
 
@@ -125,7 +126,7 @@ scheduling, session ledger, compensation, Merithub, tickets, SLA, audit · Phase
 and parent portal · Phase 3 teacher and HR · Phase 4 finance controls · Phase 5 analytics
 and AI.
 
-Roughly twenty business decisions remain open in the baseline (§30) — cancellation cutoff,
-SLA durations, capacity unit, duplicate-match confidence, incentive formula. The
-`scope-interrogator` agent exists to audit which of those actually block Phase 1 and which
-can take a flagged placeholder. It has not been run yet; that is the next step.
+The baseline's 21 open decisions have been audited (`docs/open-decisions.md`): **six are
+shape-blocking** and must be answered before the first schema — capacity unit, fields requiring
+approval to edit, duplicate merge rules, teacher-vs-student technical failure, the approval role
+set, and the Phase 1 teacher/HR minimum. The other fifteen take flagged placeholder policy rows.

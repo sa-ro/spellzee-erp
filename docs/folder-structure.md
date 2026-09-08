@@ -188,9 +188,14 @@ common/
 
 ## `apps/web/src` — the console
 
-Sketched, not settled: the component library, data grid and query layer are a deliberate day-one
-decision that has **not been made yet** (see `docs/open-decisions.md`). Retrofitting a table
-abstraction across forty screens is a real cost, so this firms up before `/ui-feature` runs.
+Stack settled 2026-09-09: **shadcn/ui** (Radix + Tailwind) for components, **TanStack Table** for
+the grid, **RTK Query + axios** for server state. Both key choices are headless with the code in the
+repo, which is what lets the still-pending Figma tokens apply directly instead of through a
+library's theme API. See `tradeoff-library.md` decision 10.
+
+shadcn components land in `components/ui/` as editable source — they are ours to modify, not a
+dependency to override. That matters for the parts no library ships: sixteen colourblind-safe
+session statuses, maker–checker approval cards, the audit trail, the stall queue.
 
 ```
 src/

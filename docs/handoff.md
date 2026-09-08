@@ -19,7 +19,7 @@ cd spellzee-erp
 Then read, in this order:
 
 1. **`CLAUDE.md`** — the working summary. Stack, the five load-bearing rules, precedence, agents.
-2. **`tradeoff-library.md`** — nine decisions, each with a reversal trigger.
+2. **`tradeoff-library.md`** — ten decisions, each with a reversal trigger.
 3. **`docs/open-decisions.md`** — the 21 baseline questions, sorted shape vs value.
 4. **`docs/folder-structure.md`** — the layout to build into.
 5. This file — what the last session decided that is not yet in a schema.
@@ -72,7 +72,8 @@ the persistent test database would need updating.
 | Ticket assignment | Transfers ownership **permanently** | same |
 | One open ticket per student | New invariant, verified | invariants registry |
 | MCP servers | Few, and none that reach the codebase | `tradeoff-library.md` decision 9 |
-| Design tokens | Template only — every value `TBD` | `docs/design/` |
+| Frontend stack | **shadcn/ui + TanStack Table**, RTK Query, Tailwind | `tradeoff-library.md` decision 10 |
+| Design tokens | Template only — every value `TBD`, format settled as CSS custom properties | `docs/design/` |
 
 ### Auth, specifically
 
@@ -209,10 +210,8 @@ filesystem MCPs are unwatched paths around every guard.
 3. **Run `/api-feature`** for the first slice — identity and duplicate control is the natural start,
    since it has the fewest blocked dependencies. Phase 1 of that chain will re-check the open
    decisions; Phase 3 is the schema gate and will stop for approval.
-4. **Choose the frontend component library, data grid and query layer** before `/ui-feature` runs in
-   anger. `CLAUDE.md` calls it a day-one decision — retrofitting a table abstraction across forty
-   screens is a real cost.
-5. **Fill `docs/design/`** once the Figma MCP is connected.
+4. **Fill `docs/design/`** once the Figma MCP is connected. The token format is settled (CSS custom
+   properties), so the Figma values drop straight in.
 
 ---
 

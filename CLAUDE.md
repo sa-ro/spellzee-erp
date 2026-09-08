@@ -343,9 +343,29 @@ recruitment planning. Do not optimise toward 100% utilization; management define
 - **Polling** for internal dashboards; no WebSockets. ETags and conditional requests keep it cheap.
 - The parent portal (phase 2) inverts the reader/writer ratio overnight and is the known trigger to
   revisit both of the above, plus notification fan-out. Plan the seam now; build it then.
-- The Next.js internal console is mostly dense tables, filters and forms. Choose the headless
-  component library, data grid and query layer **deliberately on day one** — retrofitting a table
-  abstraction across forty screens is a real cost.
+- The Next.js internal console is mostly dense tables, filters and forms — which is why the
+  component library and data grid were chosen deliberately, before any screen existed. Retrofitting
+  a table abstraction across forty screens is a real cost.
+
+### Frontend stack (decided 2026-09-09)
+
+| Layer | Choice | Why |
+|---|---|---|
+| Components | **shadcn/ui** (Radix + Tailwind) | Code lands in the repo, not `node_modules`. Tokens are CSS variables, so the Figma values swap in directly instead of going through a library's theme API |
+| Data grid | **TanStack Table** (headless) | Logic without markup — row height, density and our own tokens apply directly |
+| Server state | **RTK Query + axios** | Per `frontend/api-integration`; polling with ETags, no realtime |
+| Styling | **Tailwind** | Follows shadcn |
+
+Both key choices are **headless and in-repo**, and that is the point. The design is custom, the
+design tokens are still `TBD` pending Figma, and the console needs components no library ships —
+sixteen colourblind-safe session statuses, maker–checker approval cards, an audit trail, a stall
+queue. Owning the markup means modifying it rather than fighting an override API.
+
+The cost is real and accepted: nothing arrives working. Every primitive is installed and customised,
+where Mantine or MUI would have given a functioning date picker on import.
+
+*Reversal trigger: a second product surface with materially different needs, or component work
+starting to exceed the feature work it supports.* (Decision 10 in `tradeoff-library.md`.)
 
 ## Testing & operations
 

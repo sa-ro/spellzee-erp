@@ -133,6 +133,7 @@ The same six fields, applied to the decisions actually made rather than the cano
 | 7 | Never call upstream DELETE | Mirror local cancellation upstream | Their delete is irreversible and destroys attendance and recordings | Orphaned upstream objects accumulate | The provider adding a soft-delete or archive operation |
 | 8 | Allocate locally, provision asynchronously | Block allocation on the external call | Coordinator workflow must not depend on third-party availability | A four-state machine and a stall queue to watch | Stalls becoming frequent enough to need auto-remediation |
 | 9 | Few MCP servers, and only ones that cannot reach the codebase | Postgres/Prisma/filesystem MCP for convenience | The guard hook sees Bash, Write and Edit — not MCP tool calls. An MCP server that reaches the database is a path around every check | Convenience: `psql` through Bash is clunkier than a tool call | The hook learns to inspect MCP tool calls |
+| 10 | shadcn/ui + TanStack Table (headless, code in-repo) | Mantine, MUI, Ant Design, AG Grid | The design is custom, and the tokens are still `TBD` — a library that owns its theme would fight the Figma values on arrival. Dense tables and the governance surfaces have no off-the-shelf equivalent | Ready-made components: every primitive is installed and customised rather than imported working | A second product surface with different needs, or the component work exceeding the feature work it supports |
 
 Decisions 3 and 4 are the ones I'd defend hardest under pressure. Decision 5 is the one most likely to be argued against internally, and worth writing the ADR for first — the pressure to build a rule engine always arrives as a reasonable-sounding request.
 
@@ -219,5 +220,6 @@ The architecture is a modular monolith in a single region: one deployable backen
 | Procurement asking about uptime | 8 — replication posture |
 | A third "just make this configurable" request | Spellzee 5 — policy rows vs. rule engine |
 | A verification that lives in an ad-hoc query, not a test | Spellzee 9 — MCP surface |
+| Fighting a component library to apply a design token | Spellzee 10 — headless vs. batteries-included |
 
 **The habit, in one line:** after every design, write down not what you chose, but *what would have to become true for you to choose differently*. If you can't answer that, the decision was inherited rather than made.
