@@ -1,0 +1,35 @@
+{
+  "$comment": [
+    "Shared strictness, extended by each workspace. This file is a BASE, not a project — it",
+    "is named tsconfig.base.json so no editor or tool tries to compile it and then reports",
+    "that it matched no files.",
+    "",
+    "apps/api (Node, NodeNext, decorators) and apps/web (Next.js, Bundler resolution, DOM,",
+    "JSX) need genuinely different settings; one config cannot serve both honestly. Each",
+    "extends this and supplies its own module settings and include globs.",
+    "",
+    "`module` and `moduleResolution` are set here only so they do not fall back to 'classic',",
+    "which is incompatible with resolveJsonModule (TS5070). Both workspaces override them.",
+    "",
+    "No `baseUrl` and no `paths`. Cross-package imports resolve through npm workspaces, which",
+    "works at runtime as well as at compile time — `paths` is compile-time only, so tsc would",
+    "pass while node failed at import. `baseUrl` is also deprecated as of TypeScript 5.5."
+  ],
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  }
+}

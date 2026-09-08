@@ -1,26 +1,13 @@
 {
   "$comment": [
-    "Root config: shared strictness only. It compiles nothing — `files: []` and `include: []`",
-    "make it a base that apps extend, because apps/api (Node) and apps/web (Next.js) need",
-    "different module resolution, libs and JSX settings. One config cannot serve both honestly.",
-    "",
-    "No `baseUrl` and no `paths`. Cross-package imports resolve through npm workspaces, which",
-    "works at runtime as well as at compile time — `paths` is compile-time only, so tsc would",
-    "pass while node failed at import. `baseUrl` is also deprecated as of TypeScript 5.5."
+    "Solution config. It compiles nothing itself — it points editors and `tsc -b` at the real",
+    "projects, so opening the repo root type-checks every workspace with its own settings.",
+    "Shared compiler options live in tsconfig.base.json, which each project extends."
   ],
-  "compilerOptions": {
-    "target": "ES2022",
-    "strict": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true
-  },
   "files": [],
-  "include": []
+  "references": [
+    { "path": "./apps/api" },
+    { "path": "./apps/web" },
+    { "path": "./packages/contracts" }
+  ]
 }

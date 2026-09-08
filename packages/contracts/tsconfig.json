@@ -1,17 +1,29 @@
 {
   "$comment": [
     "Types and enums only. Must stay importable from a browser, so no `types: [node]`",
-    "and no DOM — it should compile against neither runtime's globals."
+    "and no DOM — it should compile against neither runtime's globals.",
+    "",
+    "composite: true because the apps reference this project. Its declaration output is",
+    "what they type-check against."
   ],
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "lib": ["ES2022"],
+    "composite": true,
     "declaration": true,
+    "declarationMap": true,
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "."
   },
-  "include": ["src/**/*.ts", "*.ts", "*/*.ts"],
+  "include": [
+    "index.ts",
+    "identity/**/*.ts",
+    "operations/**/*.ts",
+    "finance/**/*.ts",
+    "governance/**/*.ts",
+    "shared/**/*.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

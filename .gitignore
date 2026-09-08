@@ -73,3 +73,13 @@ tmp/
 temp/
 *.tmp
 .cache/
+
+# Emitted declarations and JS next to their sources. `outDir` keeps normal builds
+# in dist/, but tsc -b --clean and a mis-set rootDir can drop them beside the .ts
+# file — committing a stale .d.ts is worse than not building at all, because it
+# type-checks green against yesterday's shape.
+packages/**/*.js
+packages/**/*.d.ts
+packages/**/*.js.map
+packages/**/*.d.ts.map
+!packages/**/*.config.js

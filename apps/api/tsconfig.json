@@ -4,8 +4,9 @@
     "Add \"types\": [\"node\"] when @types/node arrives with NestJS — omitted now so this",
     "compiles against an empty tree."
   ],
-  "extends": "../../tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "lib": ["ES2022"],
@@ -16,5 +17,6 @@
     "sourceMap": true
   },
   "include": ["src/**/*.ts", "test/**/*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": ["node_modules", "dist"],
+  "references": [{ "path": "../../packages/contracts" }]
 }
