@@ -1,0 +1,17 @@
+# Normalise line endings so diffs stay clean across Windows/macOS/Linux.
+* text=auto eol=lf
+
+# Binary — never touch.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+
+# Lockfiles: keep diffs readable, but they are generated — don't review them line by line.
+package-lock.json linguist-generated=true
+pnpm-lock.yaml    linguist-generated=true
+yarn.lock         linguist-generated=true
