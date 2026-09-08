@@ -9,10 +9,19 @@ code exists yet.
 
 ## What is here
 
+> **Picking this up on a new machine or in a fresh session? Start with
+> [`docs/handoff.md`](docs/handoff.md).** It carries the environment setup, what has been decided,
+> and — importantly — the schema decisions from the last session that are not yet written into any
+> code.
+
 | Path | What it is |
 |---|---|
+| [`docs/handoff.md`](docs/handoff.md) | **Read first on a new machine** — state, environment, what is decided, what blocks the first schema |
 | [`CLAUDE.md`](CLAUDE.md) | The working summary — stack, the five load-bearing rules, domain model, roadmap |
 | [`tradeoff-library.md`](tradeoff-library.md) | Architecture decisions, each with a **reversal trigger** |
+| [`docs/open-decisions.md`](docs/open-decisions.md) | The baseline's 21 open questions, sorted shape vs value |
+| [`docs/folder-structure.md`](docs/folder-structure.md) | The modular-monolith layout to build into |
+| [`docs/design/`](docs/design/) | Design system template — every value `TBD` pending Figma |
 | `Spellzee_ERP_Master_Product_Business_Requirements_Draft_3.pdf` | The business baseline (Draft 3) |
 | [`.claude/`](.claude/) | Skills, agents, commands and hooks — the build tooling |
 
