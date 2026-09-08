@@ -63,6 +63,21 @@ directories so the boundary is visible from the start — `academic` is Phase 2,
 Phase 3, `analytics` is Phase 5, and `communication` carries notification templates and channel
 routing.
 
+**Each module has a `README.md`** stating what it owns, what it explicitly does *not* own, its
+invariants, and which open decisions block it. Read the module's README before writing in it — the
+"does not own" section is the one that prevents work landing in the wrong place.
+
+| Module | Phase | Centre of gravity |
+|---|---|---|
+| [`identity`](modules/identity/README.md) | 1 | Permanent IDs, duplicate control, merge |
+| [`operations`](modules/operations/README.md) | 1 | Ownership, allocation, sessions, tickets |
+| [`finance`](modules/finance/README.md) | 1 | Subscriptions and the append-only ledger |
+| [`governance`](modules/governance/README.md) | 1 | RBAC, maker–checker, audit |
+| [`academic`](modules/academic/README.md) | 2 | Curriculum, lessons, assessment |
+| [`teacher-hr`](modules/teacher-hr/README.md) | 3 | Training, certification, capacity |
+| [`communication`](modules/communication/README.md) | 1–2 | Notifications, channels |
+| [`analytics`](modules/analytics/README.md) | 5 | Reporting, later AI |
+
 ## Path names are load-bearing
 
 `.claude/hooks/guard-invariants.js` reads them to decide what to check:
