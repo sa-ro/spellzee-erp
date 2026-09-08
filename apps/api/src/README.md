@@ -58,9 +58,23 @@ routing.
 **Renaming a directory changes what the hook enforces.** Treat a rename as a change to the guard,
 not a tidy-up.
 
+## Helpers go in `common/`, named by concern
+
+```
+common/errors · pagination · etag · time · ids
+```
+
+Shared helpers are welcome — a `utils/` folder is not. Same code, different name: `time/` and
+`ids/` say what they hold, so a new helper either has an obvious home or forces you to name a new
+concern. `utils/` accumulates forty unrelated functions and nobody can tell what is inside.
+
 ## Not here, on purpose
 
 - No `services/` catch-all — logic is a command, a query, or `platform/`.
-- No `utils/` — it becomes a landfill. Name the concern.
+- No `utils/` — see above. Name the concern instead.
+- **No `constants/`** — that is where `CANCELLATION_CUTOFF_HOURS = 24` gets written, quietly
+  reversing decision 5. Domain *vocabulary* (status names, entry types, provisioning states) lives
+  in `packages/contracts/shared` because the frontend needs the same strings; a *threshold* is a
+  versioned policy row.
 - No `cache/` — the database is truth.
 - No reconciliation-job directory — one appearing means the consistency boundary moved.

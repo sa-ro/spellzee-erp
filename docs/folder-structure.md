@@ -175,14 +175,38 @@ workers must not scale to zero — a consumer inside a scale-to-zero service sto
 and that is the most common way an outbox pattern dies. If workers lived under `modules/`, someone
 would eventually bundle them into the API and the failure would be invisible.
 
-### Shared
+### `common/` — shared helpers, named by concern
 
 ```
 common/
 ├── errors/                     domain error → HTTP mapping
 ├── pagination/                 cursor-based
-└── etag/                       conditional requests — makes polling cheap
+├── etag/                       conditional requests — makes polling cheap
+├── time/                       civil-time arithmetic, tstzrange helpers
+└── ids/                        STU-2026-000184 generation and validation
 ```
+
+**Helpers belong here — but the folder is named for its concern, never `utils/`.** A `utils/`
+directory accumulates forty unrelated functions inside a month and nobody can tell what is in it.
+`time/` and `ids/` are the same *kind* of code; the difference is that their names say what they
+hold, so a new helper has an obvious home or forces you to name a new one.
+
+`time/` earns its place early: sessions are `TIMESTAMPTZ`, cancellation policy is expressed as
+"N hours before start", and the civil timezone is still an open decision. That arithmetic wants one
+home, not a copy in every module.
+
+**Constants do not live here, and there is no `constants/` directory.** The distinction matters:
+
+| Domain vocabulary → `packages/contracts/shared` | Business policy → a versioned policy row |
+|---|---|
+| `'late_cancellation'` — the status *name* | 24 hours — the *cutoff* |
+| `'compensation_grant'` — the entry type | 30 days — the *validity* |
+| `'stalled'` — the provisioning state | 3 attempts — the *retry cap* |
+
+The left column is vocabulary the frontend needs too, so it lives in `contracts/`. The right column
+is policy, and a `constants/` folder is exactly where someone would write
+`CANCELLATION_CUTOFF_HOURS = 24` — quietly reversing decision 5. Not having the folder removes the
+temptation.
 
 ---
 
@@ -201,11 +225,21 @@ session statuses, maker–checker approval cards, the audit trail, the stall que
 src/
 ├── app/                        Next.js routes
 ├── features/                   mirrors the API's modules
-├── components/                 presentational — props in, events out
+├── components/
+│   └── ui/                     shadcn components — editable source, not a dependency
 └── lib/
     ├── api/                    TanStack Query + axios; imports contracts
-    └── polling/                ETag-aware; no WebSockets
+    ├── polling/                ETag-aware; no WebSockets
+    ├── format/                 display formatting — dates, counts, names
+    └── utils.ts                shadcn's `cn()` lives here, by its convention
 ```
+
+`lib/utils.ts` is the one sanctioned exception to "no `utils`": shadcn generates components that
+import `cn` from exactly that path. Fighting the convention costs more than it saves — but it holds
+`cn` and nothing else. Anything a second helper would go in belongs in a named folder beside it.
+
+`format/` is display-only. Business rules never live here: a formatter decides how a date *looks*,
+never what a cutoff *means*.
 
 ---
 
@@ -215,11 +249,20 @@ src/
 contracts/
 ├── identity/
 ├── operations/
-└── finance/
+├── finance/
+├── governance/                 RBAC verbs, approval states
+└── shared/                     domain vocabulary both sides need
 ```
 
 Response types and shared enums. The backend owns them; the frontend imports them. Nothing with a
 runtime dependency on NestJS or Prisma goes here — it must stay importable from the browser.
+
+`shared/` holds the **domain vocabulary**: the sixteen session outcomes, ledger entry types, the
+four provisioning states, ticket statuses, RBAC verbs. Both sides need the same strings — the
+backend to store them, the frontend to render a status badge — and a second copy on the frontend
+drifts silently the first time a value is added.
+
+Vocabulary only. A threshold is not vocabulary; it is a versioned policy row.
 
 ---
 
@@ -240,7 +283,13 @@ runtime dependency on NestJS or Prisma goes here — it must stay importable fro
 ## What is deliberately absent
 
 - **No `services/` layer as a catch-all.** Logic belongs in a command, a query, or `platform/`.
-- **No `utils/`.** It becomes a landfill. Name the concern.
+- **No `utils/`.** Helpers are welcome; the landfill is not. `common/time`, `common/ids`,
+  `web/lib/format` are the same code with a name that says what it holds. (`web/lib/utils.ts` is the
+  single exception — shadcn generates imports against that exact path, and it holds `cn` only.)
+- **No `constants/`.** Domain vocabulary goes in `packages/contracts/shared` because both sides need
+  the same strings; a threshold is a versioned policy row. A `constants/` folder is precisely where
+  `CANCELLATION_CUTOFF_HOURS = 24` gets written, and decision 5 is reversed without anyone deciding
+  to reverse it.
 - **No read store, no CQRS split, no reconciliation-job directory.** Consistency is strong inside
   the database by design; a reconciliation job appearing is a signal the boundary moved.
 - **No `cache/`.** The database is truth. Redis holds queue state, rate limits, sessions and the
