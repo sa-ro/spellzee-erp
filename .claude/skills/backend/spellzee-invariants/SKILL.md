@@ -88,10 +88,14 @@ it('rejects a second active owner for the same student', async () => {
 });
 ```
 
-Run against real PostgreSQL (Testcontainers or docker-compose), never a
-mock — a mocked repository proves nothing about the component most likely
-to fail. Assert on the **constraint name**, so a test can't accidentally
-pass on an unrelated error.
+Run against real PostgreSQL — the `spellzee_test` database on port 5433 on
+this machine (no Docker; see `project-conventions`). Never a mock: a mocked
+repository proves nothing about the component most likely to fail. Because
+that database persists between runs, each test must clean up after itself —
+wrap in a transaction and roll back, or truncate.
+
+Assert on the **constraint name**, so a test can't accidentally pass on an
+unrelated error.
 
 Name constraints explicitly (`CONSTRAINT one_active_owner ...`). An
 auto-generated name is unreadable in a production error and untestable.

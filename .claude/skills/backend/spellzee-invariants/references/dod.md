@@ -39,8 +39,11 @@ Every applicable item must pass before the work is called complete.
       database rejects it**.
 - [ ] The test asserts on the **constraint name / error token**, not on a
       generic error type.
-- [ ] The test runs against **real PostgreSQL** (Testcontainers or
-      docker-compose), not a mock and not an in-memory substitute.
+- [ ] The test runs against **real PostgreSQL** (`spellzee_test`, port 5433 —
+      see `project-conventions`), not a mock and not an in-memory substitute.
+- [ ] The test cleans up after itself (transaction rollback, or truncate).
+      There is no per-test container here, so the database persists between
+      runs and isolation is the suite's own responsibility.
 - [ ] The happy path is also covered — the constraint permits what it should.
 - [ ] If the invariant is vulnerable to a race (any trigger that reads other
       rows to decide), there is a **concurrent** test with two simultaneous

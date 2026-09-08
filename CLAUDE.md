@@ -286,7 +286,10 @@ recruitment planning. Do not optimise toward 100% utilization; management define
 
 ## Testing & operations
 
-- **Tests run against real PostgreSQL** (Testcontainers or equivalent), never mocked repositories.
+- **Tests run against real PostgreSQL**, never mocked repositories. Locally that is the
+  `spellzee_test` database on port 5433 — there is no Docker on this machine, so tests must
+  clean up after themselves (transaction rollback or truncate) rather than relying on a fresh
+  container. See `skills/backend/project-conventions`.
   When invariants live in the database, a mocked-repository test proves nothing about the component
   most likely to fail.
 - **Constraint tests are the highest-value tests here**: attempt the violation, assert the database

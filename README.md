@@ -74,9 +74,10 @@ so it holds whether or not the relevant skill was loaded.
 
 Not yet possible end to end — these are the known blockers:
 
-- **PostgreSQL for tests.** Constraint tests run against real Postgres (exclusion
-  constraints and triggers cannot be mocked). Needs Docker + Testcontainers, a native
-  install, or a cloud dev instance — none set up yet.
+- ~~PostgreSQL for tests.~~ **Done** — PostgreSQL 17 installed natively on port 5433
+  (16 already held 5432), with `spellzee_dev` / `spellzee_test` databases, a non-superuser
+  `spellzee` role, and `btree_gist` enabled. No Docker, so no Testcontainers: tests share a
+  persistent database and must clean up after themselves.
 - **Cloud provider** undecided, which also decides the managed Postgres and Redis.
 - **Auth provider** undecided, which blocks RBAC.
 - **Frontend component library, data grid and query layer** — a deliberate day-one

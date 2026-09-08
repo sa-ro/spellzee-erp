@@ -50,8 +50,9 @@ have actually fired.
   env vars, and external API responses. Validate `process.env` once at
   startup with a zod schema, fail fast on a missing/malformed var instead
   of getting `undefined` deep in a handler later.
-- **Testing**: Vitest for unit/integration; Testcontainers (or a local
-  docker-compose Postgres) for integration tests against a real DB —
+- **Testing**: Vitest for unit/integration; a **real PostgreSQL instance**
+  for integration tests — on this machine that is the local `spellzee_test`
+  database on port 5433, since there is no Docker (see `project-conventions`) —
   never mock the database for anything that exercises a real query. On
   this project that is not a preference but a consequence of where the
   invariants live: a mocked-repository test proves nothing about the
