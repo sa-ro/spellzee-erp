@@ -132,6 +132,7 @@ skills — it just checks, so the guard holds whether or not the relevant skill 
 | `sessions_remaining` and similar balance columns | asks — decision 3, reversal trigger "never" |
 | `DROP CONSTRAINT` / `DROP INDEX` / `DROP TRIGGER` in a migration | asks — invariants live in the database |
 | `UPDATE` / `DELETE` on a ledger table | asks — corrections are new rows |
+| `UPDATE` / `DELETE` on `audit_log`, `policy_versions`, `approval_requests` | asks — an editable audit trail evidences nothing |
 | `await` on Merithub/FreeJump/WhatsApp in a controller, resolver or service | asks — belongs in a worker |
 
 Exemptions that keep it quiet: Markdown and `.claude/` files (so the skills can quote these
@@ -307,7 +308,15 @@ rather than by memory.
   high-impact subscription changes, restricted deletion. The requester never approves their own request.
 - **Overrides** record who, what, why, old value, new value, approver.
 - **No silent history changes.** Completed payments, classes, allocations, tickets and academic
-  records are never overwritten or hard-deleted. Corrections are new rows with reasons.
+  records are never overwritten or hard-deleted. Corrections are new rows with reasons. The audit
+  table, policy versions and approval requests are append-only for the same reason — an audit trail
+  that can be edited proves nothing, because the edit leaves no trace of itself.
+- **Data classification** — see [`docs/data-classification.md`](docs/data-classification.md).
+  Most of this product is Sensitive: the subjects are children and a student record is a full
+  identity plus a behavioural history. The operative rule is **log identifiers, never values** — a
+  name in a log has escaped every permission check and reached a third-party service. The audit
+  table is the deliberate exception, since §22.5 requires it hold old and new values; that makes
+  reading it a permissioned action, and means audit rows never reach application logs.
 
 The authority matrix in the baseline (§22.4) is explicitly illustrative, not final.
 

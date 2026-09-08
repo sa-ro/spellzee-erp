@@ -22,6 +22,7 @@ enforces its boundaries. There is no Prisma schema, no NestJS app and no Next.js
 | [`tradeoff-library.md`](tradeoff-library.md) | Architecture decisions, each with a **reversal trigger** |
 | [`docs/open-decisions.md`](docs/open-decisions.md) | The baseline's 21 open questions, sorted shape vs value |
 | [`docs/folder-structure.md`](docs/folder-structure.md) | The modular-monolith layout to build into |
+| [`docs/data-classification.md`](docs/data-classification.md) | Which fields are sensitive, and what that changes for logs, errors and export |
 | [`docs/design/`](docs/design/) | Design system template — every value `TBD` pending Figma |
 | `Spellzee_ERP_Master_Product_Business_Requirements_Draft_3.pdf` | The business baseline (Draft 3) |
 | [`.claude/`](.claude/) | Skills, agents, commands and hooks — the build tooling |

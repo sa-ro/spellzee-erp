@@ -209,6 +209,31 @@ function checkFile(path, body) {
           "See .claude/skills/backend/spellzee-entitlement-ledger."
       );
     }
+
+    // 4. Mutating the audit trail or a policy version — same append-only rule,
+    //    and arguably a worse violation: an editable audit log cannot evidence
+    //    anything, because the edit itself leaves no trace. A superseded policy
+    //    version that can be rewritten retroactively re-judges every past event
+    //    decided under it.
+    const historyMutation =
+      /\b(UPDATE|DELETE\s+FROM)\s+["`']?(audit_log|audit_logs|audit_entries|audit_trail|policy_versions|approval_requests)\b/i.exec(
+        body
+      );
+    if (historyMutation) {
+      const table = historyMutation[2];
+      ask(
+        `This modifies \`${table}\` directly.\n\n` +
+          "Audit records, policy versions and approval requests are append-only, for the same " +
+          "reason the ledger is. An audit trail that can be edited proves nothing — the edit " +
+          "leaves no trace of itself. A policy version that can be rewritten retroactively " +
+          "re-judges every event already decided under it.\n\n" +
+          "Corrections are new rows. A policy change closes the current version " +
+          "(`effective_to = now()`) and inserts a new one; it never edits the old value.\n\n" +
+          "The narrow legitimate case is setting `effective_to` on supersession — confirm that is " +
+          "what this is.\n\n" +
+          "See /CLAUDE.md (governance) and .claude/skills/backend/spellzee-policy-versioning."
+      );
+    }
   }
   process.exit(0);
 }

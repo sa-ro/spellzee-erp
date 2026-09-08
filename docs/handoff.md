@@ -353,3 +353,10 @@ adjacent choices interact with decisions still open.
   `lib/utils.ts` is the single exception — shadcn imports `cn` from that literal path.
 - **`dayjs` has two sanctioned import sites** and ESLint enforces it. A bare `dayjs()` uses the
   host's timezone and fails silently.
+- **Log identifiers, never values.** Most of this product is Sensitive data about children. A name
+  or phone number in a log has escaped every permission check and reached a third-party service.
+  See `docs/data-classification.md`. The audit table is the deliberate exception — §22.5 requires it
+  hold old and new values — which is why reading it is permissioned and audit rows never reach
+  application logs.
+- **The audit table, policy versions and approval requests are append-only**, like the ledger. The
+  hook asks on `UPDATE`/`DELETE` against any of them.
