@@ -1,0 +1,886 @@
+                  SPELLZEE ERP
+Master Product & Business Requirements
+
+    Draft 3 -- Comprehensive Discovery
+                       Baseline
+
+        Student Operations · Academic Delivery · Teacher & HR · Finance · Customer Success ·
+                   Communication · Governance · Capacity Planning · Analytics · Future AI
+
+                                  Document Status: Comprehensive Working Draft
+                      Immediate Product Focus: Spellzee Operations / Delivery Platform
+
+                                     Long-Term Product: Integrated Spellzee ERP
+Purpose: Single consolidated business and product requirements reference for management, product
+
+                                                         and engineering
+
+This document consolidates the product discovery discussion into a single structured baseline. It deliberately distinguishes business requirements
+from later technical implementation decisions.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 1
+ Document Structure                                                Page 2
+
+  · 1. Executive Summary
+  · 2. Why Spellzee Needs an ERP
+  · 3. Product Vision & Principles
+  · 4. Current-State Ecosystem
+  · 5. Proposed ERP Domain Architecture
+  · 6. Core Data & Identity Model
+  · 7. Student Lifecycle
+  · 8. Admission Handover & Onboarding
+  · 9. Coordinator & Ownership Management
+  · 10. Teacher & HR Management
+  · 11. Teacher Training & Certification
+  · 12. Teacher Observation, Quality & Incentives
+  · 13. Capacity Planning & Workforce Forecasting
+  · 14. Class Allocation & Scheduling
+  · 15. Session Lifecycle, Attendance & Compensation
+  · 16. Completion & Payment Forecasting
+  · 17. Academic Management
+  · 18. Student Continuity & Teacher Handover
+  · 19. Parent Portal & Communication
+  · 20. Tickets, SLA & Customer Success
+  · 21. Subscription & Finance
+  · 22. Governance, Segregation of Duties & Approvals
+  · 23. Integrations
+  · 24. Notifications
+  · 25. Operations & Management Dashboards
+  · 26. Analytics & KPIs
+  · 27. AI & Automation Roadmap
+  · 28. Security, Audit & Non-Functional Requirements
+  · 29. Implementation Roadmap
+  · 30. Open Decisions & Discovery Backlog
+  · 31. Glossary
+  · 32. Product North Star
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3
+1. Executive Summary
+
+Spellzee is evolving from multiple operational tools and manual workflows into a controlled, connected ERP. The immediate
+build is a Student Operations & Delivery Platform, but the product should be architected as the foundation of a broader Spellzee
+ERP.
+The purpose is not to reproduce spreadsheets or simply combine screens. The ERP should become a system of record and a
+system of control: it should know who the student is, what they purchased, what was scheduled, what was delivered, what was
+taught, who owns the relationship, what problems occurred, what capacity is available, what changes were approved, and what
+should happen next.
+The foundation should be built before advanced AI. Reliable identities, relationships, workflows, history, permissions and event
+data will create the dataset required for later forecasting, recommendations and automation.
+
+2. Why Spellzee Needs an ERP
+
+· Multiple tools currently hold different parts of the student, sales, calling, class and communication journey.
+· Allocation uses operational sheets and separate LMS/classroom processes.
+· Parents may communicate through multiple WhatsApp accounts, making ownership and history difficult to control.
+· Student duplicates can arise when returning families use a different email/phone or slightly different spelling.
+· Teacher availability is complex and cannot be represented adequately by a simple Monday­Friday grid.
+· Compensation and rescheduling require policy-based decisions to protect both student entitlement and business capacity.
+· Teacher training, observation, performance and incentives are currently substantial processes that need structured records.
+· Management needs to know capacity versus demand and future recruitment needs, not merely today's availability.
+· Important changes need approval, segregation of duties and auditability.
+· Student history must remain intact when teachers, schedules, courses or coordinators change.
+
+3. Product Vision & Principles
+
+3.1 Vision
+
+Build Spellzee ERP as the trusted operating system for the complete student, employee and delivery lifecycle.
+
+3.2 Core Principles
+
+· One permanent Spellzee identity per student/person.
+· Student, enrollment, subscription, payment, schedule and session are distinct concepts linked by identifiers.
+· Never silently overwrite important history.
+· Do not permanently delete critical business records without exceptional authorization.
+· Every critical action is attributable and auditable.
+· Maker and checker are separated for sensitive actions.
+· Business rules should be configurable.
+· Capacity must be measurable and forecastable.
+· Communication, tickets, academic records and financial records are connected but not conflated.
+· Spellzee owns its core identifiers even when external systems are integrated.
+· Foundation first; analytics and AI after data quality is established.
+North-star principle: Nothing important should happen invisibly.
+
+4. Current-State Ecosystem
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 3
+System / Tool              Current Role                                    Direction
+Delicio                    Current sales system mentioned in discovery.
+TeliCRM                                                                    Remain outside initial Operations
+Merithub                   Current student database and sales system as    build; integrate or reassess later.
+FreeJump                   later clarified.
+WhatsApp                                                                   Map/migrate core identity into
+                           Live classroom/LMS infrastructure; class        Spellzee over time; exact ownership to
+Spreadsheets               scheduling, links, attendance, recordings and   confirm.
+                           reports.
+                           Calling system used for onboarding/coordinator  Integrate through API; Spellzee
+                           calls; call time/duration available.            remains operational source of truth.
+                           Parent and teacher communication, including
+                           teacher groups.                                 Integrate call activity if API capabilities
+                                                                           support it.
+                           Current class allocation workflow.
+                                                                           Move toward controlled direct
+                                                                           communication and/or in-app
+                                                                           communication; provider/API decision
+                                                                           pending.
+
+                                                                           Replace progressively with Spellzee
+                                                                           allocation and capacity workflows.
+
+5. Proposed ERP Domain Architecture
+
+Domain                     Scope
+1. Identity & Master Data  Parent, student, employee, teacher, course, subject, master records, identifiers.
+2. Sales & Admissions      Leads, demos, admission context; existing systems can remain during transition.
+3. Student & Customer      Student 360, parent relationships, enrollments, lifecycle, history.
+4. Operations / Delivery   Handover, verification, coordinator ownership, allocation, scheduling, compensation,
+                           SLA, tickets.
+5. Academic                Curriculum, lessons, attendance, assessments, materials, activities, progress,
+                           recordings.
+6. Teacher & HR            Recruitment, profile, availability, training, certification, observation, performance, leave,
+                           payroll.
+7. Finance                 Subscriptions, payments, credits, refunds, incentives and financial controls.
+8. Communication           WhatsApp, in-app messages, calls, email and notifications.
+9. Governance              Roles, permissions, approvals, segregation of duties, audit, duplicate controls.
+10. Analytics              Operational, academic, teacher, financial, capacity and retention intelligence.
+11. AI & Automation        Future recommendation, summarization, prediction and automation layer.
+
+6. Core Data & Identity Model
+
+6.1 Permanent Student Identity
+
+A student receives a permanent Spellzee Student ID, for example STU-2026-000184. The ID never changes. A new phone
+number, email, spelling variation, course, teacher, schedule, break or return does not create a new identity.
+
+6.2 Recommended Relationship Model
+
+Parent/Guardian  Student  Enrollment  Subscription  Payment
+Enrollment  Class Schedule  Individual Sessions
+Session  Attendance + Lesson + Recording + Academic/Operational outcome
+
+6.3 Identifier Set
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3                                                   Page 4
+· Student ID -- permanent person identity.
+· Enrollment ID -- participation in a specific program/course.
+· Subscription ID -- purchased commercial entitlement.
+· Payment ID -- individual financial transaction.
+· Class Schedule ID -- recurring/planned delivery arrangement.
+· Session ID -- individual class occurrence.
+· Teacher ID -- permanent teacher identity.
+· Ticket ID -- tracked operational issue/request.
+· Observation ID -- teacher quality observation.
+· Training/Course/Certification IDs -- employee learning records.
+
+6.4 Duplicate Prevention
+
+· Search existing students before creation.
+· Match across student/parent names, phone numbers, alternate numbers, emails and other approved attributes.
+· Show probable matches before allowing creation.
+· Block or require approval for high-confidence duplicates.
+· Support controlled merge while preserving original audit references.
+· Store historical contact details rather than creating identities for every new contact detail.
+
+7. Student Lifecycle
+
+Recommended lifecycle: Admission Completed  Operations Handover  Parent Verification  Teacher/Time Matching 
+Allocation Confirmed  LMS Class Created  Parent/Teacher Notified  First Class  Ongoing Sessions 
+Attendance/Lessons/Progress  Support/Changes/Break/Reallocation  Renewal/Completion/Pause/Cancellation.
+
+7.1 Student 360
+
+· Parent/guardian relationship.
+· Current and historical enrollments.
+· Subscriptions and payments.
+· Current/previous teachers.
+· Schedules and session history.
+· Attendance.
+· Lessons, assessments and progress.
+· Recordings/materials where permitted.
+· Coordinator ownership.
+· Tickets and communication.
+· Retention interactions and health/risk.
+
+8. Admission Handover & Onboarding
+
+· Receive parent/student details, address, primary and alternate contacts and required operational information.
+· Receive course/subject, preferred days and one or more timing options.
+· Carry demo assessment and teacher feedback into Operations.
+· Start an operational SLA after handover.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 5
+· Coordinator verifies the details with the parent and records outcome/attempts.
+· Match teacher using timing, subject, level, skill, language, capacity and other rules.
+· Coordinator selects/approves final match according to authority.
+· Create/update class schedule in Merithub through integration.
+· Notify parent and teacher.
+· Teacher receives student context and demo feedback before teaching.
+
+9. Coordinator & Ownership Management
+
+Ownership must be explicit. The system should never rely on employees remembering who is responsible.
+· Current owner and historical owners.
+· Assigned students and parents.
+· Responsibility start/end dates.
+· Lifecycle responsibility type: onboarding, student success, retention, operations, academic, ticket or escalation.
+· Ownership transfer reason.
+· Tasks and SLA attached to the responsible owner.
+· Parent-facing coordinator details where appropriate.
+Current operating model discussed: one person handles onboarding through first class; one coordinator handles the student
+during the first month; another coordinator/retention owner may take over later. Exact rules remain configurable.
+
+10. Teacher & HR Management
+
+10.1 Teacher Master Profile
+
+· Permanent Teacher ID.
+· Personal/contact details.
+· Qualifications and experience.
+· Subjects and levels.
+· Languages and bilingual capability.
+· Skills/specializations.
+· Documents and employment status.
+· Joining/exit information.
+· Payroll/bank information.
+· Availability, leave and capacity.
+
+10.2 Teacher Lifecycle
+
+Recruitment  Screening  Selection  Joining  Training  Mock/Assessment  Certification/Approval  Eligible for
+Allocation  Teaching  Observation  Performance  Incentive/Payroll  Leave/Availability  Exit.
+
+10.3 Teacher Allocation Relationship
+
+Teacher assignments must preserve history. The system should show current students, historical students, current schedules,
+historical schedules, load, utilization and upcoming capacity.
+
+11. Teacher Training & Certification
+
+Spellzee already runs a structured onboarding program, including approximately two weeks of training, mock teaching and
+assessments. This should become a formal Learning & Development workflow.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 6
+· Training program and version.
+· Modules/courses.
+· Trainer assignment.
+· Attendance/progress.
+· Learning materials.
+· Mock class.
+· Assessment criteria and scores.
+· Pass/fail decision.
+· Remediation/retraining.
+· Certification/approval date.
+· Eligibility rule preventing unapproved teachers from being allocated.
+The same training engine can later support Sales, Coordinator and other employee training.
+
+12. Teacher Observation, Quality & Incentives
+
+Spellzee has a teacher quality process for a large teacher workforce with trainers conducting observations/audits against
+defined criteria. This should be modeled as a first-class quality system.
+
+12.1 Observation Record
+
+· Teacher and session.
+· Observer/trainer.
+· Observation date and round.
+· Evaluation criteria.
+· Score per criterion.
+· Overall score.
+· Strengths.
+· Improvement areas.
+· Action plan.
+· Re-observation date.
+· Final outcome.
+
+12.2 Performance Rounds
+
+Observation rounds may follow defined norms. If performance remains aligned with required criteria, the teacher may qualify for
+a defined incentive level. Exact percentages, thresholds and frequency should be configurable.
+
+12.3 Quality  Coaching  Incentive
+
+Observation  score  performance band  feedback/action  re-observation where required  incentive eligibility. The
+system should preserve evidence rather than only storing a final rating.
+
+13. Capacity Planning & Workforce Forecasting
+
+Availability answers whether a person is free at a point in time. Capacity planning answers how much Spellzee can
+realistically deliver and how much additional demand it can absorb.
+
+13.1 Capacity Dimensions
+
+· Teacher total capacity.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 7
+· Occupied/allocated capacity.
+· Free capacity.
+· Capacity by day/time slot.
+· Subject/level capacity.
+· Language/bilingual capacity such as Tamil-English or Hindi-English.
+· 1-to-1 versus group capacity.
+· Teacher leave/unavailability.
+· Temporary capacity from student breaks.
+· Capacity released by expected subscription completion.
+· Teacher utilization.
+
+13.2 Current vs Forecast Capacity
+
+Current capacity is available now. Forecast capacity includes known or predicted future releases. A student taking a two-month
+break can temporarily release teacher capacity; the system should represent the expected release period and avoid treating it as
+permanent capacity.
+
+13.3 Capacity vs Demand
+
+Compare current and forecast capacity against expected new admissions. Example: 32 free sessions + 8 expected releases
+versus 45 expected demand = projected gap of 5. Management can then decide on recruitment, reallocation or demand
+management.
+
+13.4 Recruitment Forecast
+
+Capacity gaps by subject, language, level and time should feed HR recruitment planning. Historical admissions, breaks, churn,
+teacher attrition and seasonality can later support prediction.
+
+13.5 Utilization
+
+Measure allocated/used capacity versus available capacity. Avoid optimizing for 100% utilization; management should define a
+healthy target range that preserves flexibility.
+
+14. Class Allocation & Scheduling
+
+14.1 Allocation Types
+
+· New Admission Allocation.
+· Teacher Change.
+· Schedule Change.
+· Day Change.
+· Session Type Change: 1-to-1/group.
+· Course/Subject Change.
+· Student-requested Reallocation.
+· Teacher Unavailability.
+· Academic Reallocation.
+· Break.
+· Resume.
+· Other approved operational changes.
+
+14.2 Allocation Workflow
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 8
+Requirement capture  capacity/match search  coordinator review  teacher/time selection  approval where required 
+schedule creation/update  external LMS synchronization  parent notification  teacher notification  audit/history.
+
+14.3 History
+
+Every change records old teacher/time/days/session type, new teacher/time/days/session type, reason, initiator, effective date,
+approver and related ticket/request.
+
+15. Session Lifecycle, Attendance & Compensation
+
+15.1 Session States/Outcomes
+
+· Scheduled.
+· Reminder sent.
+· Parent confirmation/response where used.
+· Live.
+· Completed.
+· Student attended.
+· Partial/late/absent according to policy.
+· Parent advance cancellation.
+· Late cancellation.
+· Teacher absent.
+· Teacher-side technical issue.
+· Student-side technical issue.
+· Spellzee cancellation.
+· Rescheduled.
+· Compensation required.
+· Compensation completed.
+· Cancelled/no-show.
+
+15.2 Reminder Rules
+
+For a 3 PM class, the system can send a configurable reminder several hours before the class, and optionally another reminder
+closer to start time. The exact timing is a business policy setting.
+
+15.3 Cancellation Rules
+
+Spellzee should define a configurable cancellation cutoff. If the parent provides sufficient advance notice, the session credit may
+remain protected. A late cancellation may consume credit or follow a defined exception policy. This must be transparent
+internally and consistently applied.
+
+15.4 Teacher/Spellzee Failure
+
+Teacher absence or verified teacher/Spellzee-side failure should generally protect the student's entitlement and trigger
+compensation. Student-side technical failure may follow a separate policy.
+
+15.5 Compensation
+
+Compensation is a separate session and must not modify the normal recurring schedule. A Monday missed session can produce
+a Saturday compensation class while Monday remains the regular schedule.
+
+15.6 Rescheduling Limits
+
+· Minimum notice.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 9
+· Maximum reschedules within a subscription.
+· Late cancellation treatment.
+· Compensation validity period.
+· Maximum completion extension.
+· Repeated absence escalation.
+· Coordinator intervention threshold.
+
+15.7 Session Ledger
+
+Maintain purchased, scheduled, completed, consumed, protected, compensated and remaining session counts. Every
+adjustment must have a reason and history.
+
+16. Completion & Payment Forecasting
+
+When a student starts a 12-, 20- or other session plan, the system can calculate a planned completion date from start date,
+schedule and session entitlement. Actual attendance and compensation then produce a projected completion date.
+· Planned completion date.
+· Projected completion date.
+· Delay versus original plan.
+· Missed sessions and reasons.
+· Compensation backlog.
+· Expected renewal/payment window for internal planning.
+· Forecast changes as sessions are completed or missed.
+This forecast should help Operations and Finance understand when the next payment/renewal may occur without exposing
+internal business calculations unnecessarily to parents.
+
+17. Academic Management
+
+17.1 Academic Model
+
+Keep four concepts distinct: Attendance = whether/how much the student attended; Lesson = what was taught; Assessment =
+how the student performed; Progress = whether the student is improving.
+
+17.2 Academic Records
+
+· Academic program.
+· Course/subject/level.
+· Curriculum.
+· Lesson plans and lesson records.
+· Topics taught.
+· Activities.
+· Homework/outcomes.
+· Worksheets/materials.
+· Student submissions where applicable.
+· Assessments.
+· Teacher academic feedback.
+· Progress.
+· Recordings where permitted.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 10
+17.3 Demo Assessment
+
+Demo assessment is a pre-admission academic context record. It should be available to Operations and the assigned teacher
+so the teacher understands the starting point.
+
+17.4 Student Activities
+
+Parents may access appropriate worksheets, materials, assessments and learning activities through the Parent Portal; teachers
+and academic teams manage the content according to permissions.
+
+18. Student Continuity & Teacher Handover
+
+When a student changes teacher, the new teacher should receive meaningful historical context.
+· Previous teachers.
+· Previous and current schedules.
+· Subjects/levels.
+· Topics already taught.
+· Student strengths and learning difficulties.
+· Demo assessment.
+· Later assessment results.
+· Academic feedback.
+· Attendance patterns.
+· Parent/student preferences.
+· Open tickets/issues.
+· Relevant communication context.
+Future AI: produce a concise, permission-controlled student history summary from verified records. It should summarize, not
+replace, the source history.
+
+19. Parent Portal & Communication
+
+19.1 Parent Portal
+
+· My Children.
+· Student status.
+· Current teacher.
+· Current coordinator and contact details.
+· Upcoming classes and links.
+· Completed classes.
+· Attendance.
+· Missed and compensation sessions.
+· Worksheets/materials/activities.
+· Assessments and academic progress.
+· Permitted recordings.
+· Subscription/session balance.
+· Messages.
+· Help & Support.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 11
+· Ticket status.
+
+19.2 Communication
+
+Parents should have a single controlled way to contact the concerned Spellzee team/person, using in-app communication and/or
+integrated WhatsApp. Communication history should remain connected even when a conversation moves between owners.
+
+19.3 Communication vs Ticket
+
+A conversation is a communication channel. A ticket is a tracked issue/request with owner, category, priority, SLA, resolution
+and audit. A conversation may create or attach to a ticket.
+
+20. Tickets, SLA & Customer Success
+
+20.1 Ticket Fields
+
+· Ticket ID.
+· Student.
+· Parent.
+· Category.
+· Priority.
+· Description.
+· Created time.
+· Assigned team.
+· Assigned person.
+· SLA target.
+· Status.
+· Communication history.
+· Resolution.
+· Escalation/history.
+
+20.2 Categories
+
+· Class: teacher didn't join, student couldn't join, technical issue, cancellation, reschedule.
+· Teacher: teacher change, availability, quality concern.
+· Academic: progress/learning/assessment.
+· Schedule: timing/day changes.
+· Subscription: renewal/payment/expiry.
+· General: requests, complaints, information.
+
+20.3 SLA
+
+Current discussed target is a 48-hour resolution window, subject to final policy. A general SLA engine should support start event,
+owner, target time, warning, escalation and resolution rather than hard-coding one duration.
+
+20.4 Retention Workflow
+
+A session-count trigger, such as every three sessions or another configurable interval, can create a retention task. The retention
+owner reviews attendance, feedback, open issues, progress, schedule changes and subscription status, contacts the parent,
+records feedback and creates a ticket/follow-up when needed.
+
+20.5 Student Health
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 12
+        Possible internal states: Healthy, Watch, At Risk. Inputs can include low attendance, repeated rescheduling, complaints, teacher
+        changes, long breaks, low progress and subscription proximity. The goal is action, not a score alone.
+
+        21. Subscription & Finance
+
+        · Upfront subscription record.
+        · Purchased session entitlement.
+        · Payment ID and mapping.
+        · Sessions consumed/remaining.
+        · Validity/expiry.
+        · Credits and protected sessions.
+        · Refunds.
+        · Adjustments.
+        · Renewals.
+        · Teacher incentive/payroll inputs.
+        · Financial audit and approvals.
+        The commercial subscription should remain distinct from the academic enrollment and the individual payment transaction.
+
+        22. Governance, Segregation of Duties & Approvals
+
+        22.1 Why
+
+        ERP controls should reduce accidental corruption, unauthorized changes, duplicate identities and financial manipulation. The
+        system should support management control without making normal work unnecessarily difficult.
+
+        22.2 Role-Based Access
+
+        Permissions should determine who may view, create, edit, approve, cancel, merge, archive, export or administer each class of
+        information.
+
+        22.3 Maker­Checker
+
+        For sensitive actions, the requester should not approve their own request. Examples: refunds, duplicate merges, historical
+        corrections, high-impact subscription changes and restricted deletion.
+
+        22.4 Example Authority Matrix
+
+Action                 Staff/Coordinator          Team Lead/Manager               Finance                 Restricted Admin
+                                                  Review exceptions               --                      --
+Create student         Yes, subject to duplicate
+                       check                      Approve                         --                      Execute if authorized
+                                                  --                              --                      --
+Merge duplicate        Request                    Approve per policy              --                      --
+                                                  Approve business side           Approve financial side  --
+Change basic contact   Yes                        Approve                         If financial            Execute under control
+                                                  No                              No                      Highly restricted / preferably
+Teacher change         Request                                                                            prohibited
+
+Refund/payment adjustment Request only
+
+Historical correction  Request
+
+Permanent deletion     No
+
+        This is an illustrative starting point, not the final permission matrix.
+
+        22.5 Overrides
+
+        Authorized overrides must record who performed the override, what changed, why, old value, new value and approval.
+
+        Spellzee ERP -- Master Product & Business Requirements -- Draft 3                                                           Page 13
+22.6 No Silent History Changes
+
+Completed payments, classes, allocations, tickets and academic records should not simply disappear or be overwritten.
+
+23. Integrations
+
+23.1 Merithub
+
+Merithub is the live classroom/LMS specialist. Spellzee should create/update classes through the integration, store external IDs
+and receive relevant attendance, recording and status events. The integration should include authentication, error handling,
+retry, logging and webhook validation.
+
+23.2 TeliCRM / Delicio
+
+During transition, external sales/student records can be mapped to Spellzee IDs. The long-term source of truth and migration
+boundary must be explicitly decided.
+
+23.3 FreeJump
+
+Where API support permits, capture call time, duration, coordinator, purpose/outcome and attempts for onboarding/coordinator
+calls.
+
+23.4 WhatsApp
+
+Select an approved provider/API for controlled parent communication, templates, delivery status and conversation mapping.
+Exact provider remains a discovery decision.
+
+23.5 Integration Principle
+
+External IDs map to Spellzee IDs. External systems should not silently overwrite critical Spellzee records.
+
+24. Notifications
+
+· Admission handover notification.
+· Coordinator task/SLA notification.
+· Parent verification reminder.
+· Teacher allocation notification.
+· Teacher preparation notification with student context.
+· Parent class confirmation.
+· Class reminders.
+· Cancellation/reschedule notification.
+· Compensation confirmation.
+· Teacher absence/technical issue workflow notification.
+· Ticket assignment and SLA warnings.
+· Retention task.
+· Subscription/renewal reminders.
+· Management capacity alerts.
+Notification templates, channels, timing and recipients should be configurable and permission-aware.
+
+25. Operations & Management Dashboards
+
+25.1 Operations Dashboard
+
+· New admissions awaiting action.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 14
+· Students by lifecycle stage.
+· Allocation pending/in progress/completed.
+· SLA within/approaching/breached.
+· Today's/upcoming classes.
+· Compensation backlog.
+· Break/resume cases.
+· Teacher capacity and matching.
+· Open tickets.
+· Students with repeated changes.
+· Upcoming renewal/expiry.
+· Retention tasks.
+
+25.2 Teacher Dashboard
+
+· Current load.
+· Schedule.
+· Available slots.
+· Upcoming sessions.
+· Student list.
+· Training/certification status.
+· Observation history.
+· Performance/incentive status.
+· Leave/unavailability.
+
+25.3 Management Dashboard
+
+· Capacity vs demand.
+· Teacher utilization.
+· Recruitment gap.
+· Admissions pipeline.
+· Student retention/health.
+· Completion delays.
+· Teacher quality.
+· SLA performance.
+· Revenue/renewal forecasts where authorized.
+· Operational exceptions.
+
+26. Analytics & KPIs
+
+Area                Example KPI / Question
+Student Operations  Time from admission handover to confirmed allocation; SLA breach rate.
+Scheduling          Teacher changes; timing changes; compensation rate; reschedule rate.
+Capacity            Current free capacity; forecast free capacity; utilization; capacity gap.
+Academic            Attendance; completion; progress; assessment trends.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3                              Page 15
+Area              Example KPI / Question
+Teacher           Observation score; training completion; utilization; quality improvement.
+Customer Success  Open issues; resolution time; repeated issues; retention interventions.
+Finance           Sessions consumed; renewal forecast; refunds/credits; subscription completion.
+Workforce         Teachers needed by subject/language/time; recruitment pipeline.
+Management        Where is demand exceeding delivery capability? Which process causes the most
+                  operational friction?
+
+27. AI & Automation Roadmap
+
+AI should be a layer above reliable operational data.
+
+27.1 Future AI Use Cases
+
+· Teacher/student allocation recommendation.
+· Duplicate student detection assistance.
+· Student history summary for new teacher.
+· Retention risk prediction.
+· Recommended retention actions.
+· Academic progress summaries.
+· Teacher observation summaries and coaching recommendations.
+· Employee sales pitch/call analysis.
+· Capacity and demand forecasting.
+· Workforce recruitment forecasting.
+· Workflow automation and next-best-action suggestions.
+
+27.2 AI Governance
+
+· AI should use verified system records.
+· Sensitive information must follow permissions.
+· AI should not silently change critical records.
+· Users should be able to inspect source context where appropriate.
+· AI outputs should be treated as recommendations unless explicitly approved by business rules.
+
+28. Security, Audit & Non-Functional Requirements
+
+· Role-based access control.
+· Segregation of duties.
+· Approval workflows.
+· Audit trail.
+· Secure authentication and authorization.
+· Backups and recovery.
+· Monitoring and error logging.
+· API security and secret management.
+· Data retention and privacy policies.
+· Scalability.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3                                 Page 16
+· Reliable integration processing.
+· Development/test/staging/production separation.
+· Company-controlled cloud accounts, repositories and secrets.
+· Technical and operational documentation.
+· No critical single-person dependency.
+
+29. Implementation Roadmap
+
+Phase 0 -- Product Discovery & Foundation
+
+Finalize business processes, data entities, identifiers, permission concepts, approval rules, current-system mapping, policy
+parameters and MVP boundaries.
+
+Phase 1 -- Operations MVP
+
+Student identity/duplicate controls, admission handover, coordinator ownership, teacher availability/capacity basics, allocation,
+scheduling, session ledger, compensation rules, Merithub integration, notifications, tickets, SLA and audit.
+
+Phase 2 -- Academic & Parent Experience
+
+Lessons, assessments, worksheets/materials, progress, attendance, recordings, parent portal, communication and retention
+workflows.
+
+Phase 3 -- Teacher & HR
+
+Recruitment, teacher onboarding/training, certification, observation, performance, incentives, leave and payroll integration.
+
+Phase 4 -- Finance & Enterprise Controls
+
+Subscriptions/payments, refunds, credits, stronger approval matrix, maker-checker and financial governance.
+
+Phase 5 -- Analytics & AI
+
+Capacity forecasting, management intelligence, intelligent matching, retention prediction, AI summaries and automation.
+
+30. Open Decisions & Discovery Backlog
+
+· Exact admission allocation SLA and ticket SLA definitions.
+· Exact cancellation cutoff and late-cancellation credit policy.
+· Teacher versus student technical failure rules.
+· Maximum reschedules and compensation validity.
+· Maximum completion extension and renewal policy.
+· Whether parent sees planned/projected completion dates.
+· Exact approval hierarchy and financial thresholds.
+· Fields requiring approval to edit.
+· Duplicate matching confidence and merge rules.
+· Capacity calculation unit: hours, minutes, sessions or weighted slots.
+· Target teacher utilization range.
+· Academic curriculum and assessment model.
+· Teacher incentive formula.
+· Payroll process and source data.
+· TeliCRM versus Delicio ownership and migration boundaries.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3  Page 17
+· FreeJump API capabilities.
+· WhatsApp provider/API.
+· Data privacy, retention and access policies.
+· Parent portal release scope.
+· Teacher/employee HR scope for first release.
+· Management reporting definitions.
+
+31. Glossary              Meaning
+                          Permanent person identity.
+    Term                  Person responsible for the student relationship.
+    Student               Student's participation in a specific course/program.
+    Parent/Guardian       Commercial purchase/entitlement, such as a defined number of sessions.
+    Enrollment            Individual financial transaction.
+    Subscription          Recurring/planned delivery arrangement.
+    Payment               One specific class occurrence.
+    Class Schedule        Teacher assignment plus class schedule/arrangement.
+    Session               Separate class used to fulfil a protected/missed session entitlement.
+    Allocation            Realistic delivery capability available to Spellzee.
+    Compensation Class    Allocated/used capacity divided by available capacity.
+    Capacity              Service-level time target for an operational action.
+    Utilization           Tracked issue/request with owner, priority, SLA and resolution.
+    SLA                   Requester and approver are separated for controlled actions.
+    Ticket                Role-Based Access Control.
+    Maker­Checker         History of important actions and changes.
+    RBAC                  Connected operational, academic, commercial and support view.
+    Audit Trail           Expected future capacity based on known/predicted changes.
+    Student 360           Original expected end date based on schedule and entitlement.
+    Forecast Capacity     Current expected end date after actual attendance and changes.
+    Planned Completion
+    Projected Completion
+
+32. Product North Star
+
+Spellzee ERP should not become a larger spreadsheet.
+
+It should become a controlled operating system for Spellzee: one identity, one connected history, clear ownership,
+capacity-backed commitments, policy-driven delivery, protected student entitlement, accountable employees, governed financial
+actions, measurable academic outcomes and a reliable foundation for future intelligence.
+
+The document should now be treated as the comprehensive product/business baseline. The next discipline is not to jump
+directly into code. The next step is to validate the workflows and decisions, then translate this baseline into a detailed product
+requirements specification, UX flows, technical architecture, data model, integration contracts, permission matrix and
+implementation backlog.
+
+Spellzee ERP -- Master Product & Business Requirements -- Draft 3                                 Page 18
+
