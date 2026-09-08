@@ -10,7 +10,7 @@ Building end to end: **$ARGUMENTS**
 This chains three stages that are otherwise run by hand:
 
 ```
-Stage A   /build-feature   backend: schema → gate → API → tests → audit
+Stage A   /api-feature   backend: schema → gate → API → tests → audit
 Stage B   Figma → UI       design conversion, presentational only
 Stage C   wiring           UI ↔ real API, states, tests
 ```
@@ -25,7 +25,7 @@ discover a blocker at Stage B.
 
 1. **Is there a Figma source?** A link in `$ARGUMENTS`, or the user saying
    there is a design. If there is no design at all, this is a backend-only
-   request — run `/build-feature` instead and say so.
+   request — run `/api-feature` instead and say so.
 2. **Is the Figma MCP connected?** The `figma-pixel-perfect` skill requires
    `get_design_context`, `get_screenshot` and `get_variable_defs`. If those
    tools are not available, say so now and offer the two honest options:
@@ -41,7 +41,7 @@ discover a blocker at Stage B.
 
 ## Stage A — Backend
 
-Run the full `/build-feature` chain for the backend half. Follow that command
+Run the full `/api-feature` chain for the backend half. Follow that command
 exactly, including all of its stops:
 
 - Phase 1 stops on a **shape-blocking** open decision.
@@ -52,7 +52,7 @@ If Stage A stops at any of those, **the whole chain stops.** Do not start
 Figma work on a schema the user has not approved: the design will be wired to
 an API shape that may still change, and that work is thrown away.
 
-`/build-feature` commits at its own two points — the schema gate and the end
+`/api-feature` commits at its own two points — the schema gate and the end
 of the backend chain. Follow it; do not add commits of your own during
 Stage A.
 

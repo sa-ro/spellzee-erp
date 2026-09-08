@@ -143,9 +143,9 @@ Ambiguous changes need approval, and the reason for that judgement should be sta
 
 Three commands drive this:
 
-- **`/build-feature`** — the agent chain for backend work (schema, API, workers, integrations), with
+- **`/api-feature`** — the agent chain for backend work (schema, API, workers, integrations), with
   the schema approval gate.
-- **`/ship-feature`** — the Next.js UI from the frontend skills, in the main session, no agents.
+- **`/ui-feature`** — the Next.js UI from the frontend skills, in the main session, no agents.
 - **`/build-fullstack`** — both in order: backend chain → Figma conversion → wiring the UI to the
   real endpoints. Use it whenever a feature needs an API *and* a screen.
 

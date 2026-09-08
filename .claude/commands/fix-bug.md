@@ -7,7 +7,7 @@ argument-hint: [bug description, error message, or repro steps]
 
 You are running the bug-fix workflow for this project. The reported issue: $ARGUMENTS
 
-This workflow starts from a symptom, not a design or a feature spec — the order and emphasis are different from `/ship-feature`. Work through the phases below **in order**. Announce which phase you're entering before starting it.
+This workflow starts from a symptom, not a design or a feature spec — the order and emphasis are different from `/ui-feature`. Work through the phases below **in order**. Announce which phase you're entering before starting it.
 
 ## Phase 0 — Which half of the stack?
 

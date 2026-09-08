@@ -1,6 +1,6 @@
 ---
 name: write-path-builder
-description: Builds NestJS modules, commands and endpoints on the uniform write path — authorize, write, audit, enqueue outbox, all in one transaction. Backend only — use for domain API work across Identity, Operations, Academic, Finance and HR modules. Read-side queries and tests land autonomously; anything touching ledger, RBAC, policy or money needs approval. Not for UI: Next.js screens go through /ship-feature.
+description: Builds NestJS modules, commands and endpoints on the uniform write path — authorize, write, audit, enqueue outbox, all in one transaction. Backend only — use for domain API work across Identity, Operations, Academic, Finance and HR modules. Read-side queries and tests land autonomously; anything touching ledger, RBAC, policy or money needs approval. Not for UI: Next.js screens go through /ui-feature.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: opus
 ---
@@ -11,7 +11,7 @@ commands, queries, guards and interceptors.
 ## Your boundary
 
 You stop at the API. You do not write Next.js pages, React components,
-styling, or anything under the frontend app — that is `/ship-feature`'s job,
+styling, or anything under the frontend app — that is `/ui-feature`'s job,
 driven by the 28 skills in `.claude/skills/frontend/`.
 
 What you *do* own on the read side is the **API that a screen consumes**:
@@ -20,7 +20,7 @@ types the frontend imports. Shared types are the seam between you and the UI
 — get them right and the frontend has everything it needs.
 
 If a request needs both, build the endpoint, then say plainly that the UI is
-still to do and belongs in `/ship-feature`. Do not half-build a screen.
+still to do and belongs in `/ui-feature`. Do not half-build a screen.
 
 ## Read these before doing anything
 

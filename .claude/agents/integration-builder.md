@@ -105,7 +105,7 @@ machine's states.
 
 **Lands autonomously:** adapter internals behind a settled contract, tests,
 logging and instrumentation, and the **endpoint** backing the stall-queue
-view. The view itself is UI — `/ship-feature` builds it against your
+view. The view itself is UI — `/ui-feature` builds it against your
 endpoint and response types.
 
 ## Finishing

@@ -3,7 +3,7 @@ description: Backend feature chain for Spellzee ERP — scope check, schema and 
 argument-hint: [what to build, e.g. "student duplicate detection and merge"]
 ---
 
-# Build Feature — Spellzee agent chain
+# API Feature — Spellzee backend agent chain
 
 You are orchestrating the backend build chain for: **$ARGUMENTS**
 
@@ -27,13 +27,13 @@ yet.
 - **Read-side only** (the API behind a dashboard, a list endpoint, a query)
   → skip to Phase 4a, then Phase 5–6. No schema phase, no gate.
 - **UI only** (a screen, a component, a Figma build) → **this is the wrong
-  command.** Say so and point at `/ship-feature`, which drives the 28
+  command.** Say so and point at `/ui-feature`, which drives the 28
   frontend skills. Do not build UI here.
 - **Trivial** (a typo, a comment, a rename with no behaviour change) → say
   so and do it directly. Do not run a six-phase chain on a one-line change.
 
 This command is **backend only** — schema, API, workers, integrations. When a
-feature needs both, run this for the endpoint, then `/ship-feature` for the
+feature needs both, run this for the endpoint, then `/ui-feature` for the
 screen that consumes it. Say so in the Phase 7 report.
 
 State which route you took and why.
@@ -109,7 +109,7 @@ the frontend will import. Hand it the approved schema, the policy keys and
 the feature description. Every state-changing command follows the uniform
 write path: authorize → write → audit → enqueue outbox, in one transaction.
 
-Backend only. If the feature also needs a screen, that is `/ship-feature`
+Backend only. If the feature also needs a screen, that is `/ui-feature`
 afterwards — note it in Phase 7 rather than building it here.
 
 ### 4b — `integration-builder`
@@ -161,7 +161,7 @@ One consolidated summary:
 - Test coverage: constraint, concurrency, integration.
 - The erosion audit result.
 - **Whether a UI still needs building** for this feature, and the endpoints
-  and response types `/ship-feature` should consume.
+  and response types `/ui-feature` should consume.
 - **What is unresolved or was deferred**, explicitly. Never report
   completion over a failing gate or an unanswered open decision.
 

@@ -41,9 +41,9 @@ silently. Feature work flows *through* those owners rather than around them.
    the schema for their slice exists.
 4. **`erosion-auditor`** before anything non-trivial lands.
 
-### Running the chain: `/build-feature`
+### Running the chain: `/api-feature`
 
-`.claude/commands/build-feature.md` runs that order automatically:
+`.claude/commands/api-feature.md` runs that order automatically:
 
 ```
 Phase 0  route the request           (orchestrator, no agent)
@@ -74,21 +74,21 @@ chain altogether — a six-phase pipeline on a one-line change is waste.
 
 ### The three commands
 
-| | `/build-feature` | `/ship-feature` | `/build-fullstack` |
+| | `/api-feature` | `/ui-feature` | `/build-fullstack` |
 |---|---|---|---|
 | Builds | Backend | Frontend | Both, in order |
 | Mechanism | The 5 agents | Main session | Agents, then main session |
 | Skills | `backend/` | `frontend/` (28) | Both |
-| Human gate | Yes — schema | No | Yes — inherits the schema gate |
+| Human gate | Yes — schema | Yes — visual | Yes — both |
 | Figma | — | Yes | Yes, as Stage B |
 
 `/build-fullstack` is the one to reach for when a feature needs an API *and*
-a screen. It runs `/build-feature` whole, then converts the Figma design,
+a screen. It runs `/api-feature` whole, then converts the Figma design,
 then wires the UI to the real endpoints. Its stages are ordered deliberately:
 
 ```
 Stage 0   preflight    Figma MCP connected? frontend scaffolded?
-Stage A   backend      the full /build-feature chain
+Stage A   backend      the full /api-feature chain
           ── SCHEMA GATE ──        human approves the migration
 Stage B   Figma → UI   presentational components only, no data
           ── VISUAL GATE ──        human approves the UI before data
@@ -150,9 +150,12 @@ The seam everywhere is the **API contract**: `write-path-builder` owns the
 endpoint, its authorization, its pagination and the response types; the
 frontend imports those types rather than re-declaring them.
 
-Why the gate exists on the backend side only: a landed migration is expensive
-to reverse against production data; a wrong component is cheap to redo. The
-risk is genuinely asymmetric.
+Both commands gate, for the same underlying reason: **downstream work is
+entangled with the thing being approved.** A landed migration is expensive to
+reverse against production data and Stages B–C are built on the API shape it
+defines; a design approved only after wiring means the wiring is discarded
+along with it. `/ui-feature` carries its own visual gate for exactly this
+reason, so a standalone UI run is protected the same way a full-stack run is.
 
 **Figma MCP is required for pixel-perfect work.** If `get_design_context`,
 `get_screenshot` and `get_variable_defs` are not connected, Stage 0 says so

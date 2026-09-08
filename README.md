@@ -52,12 +52,12 @@ Four commands drive the work:
 
 | Command | Does |
 |---|---|
-| `/build-feature` | Backend chain — schema → **approval gate** → API → tests → erosion audit |
-| `/ship-feature` | Frontend — Next.js UI from the frontend skills |
+| `/api-feature` | Backend chain — schema → **approval gate** → API → tests → erosion audit |
+| `/ui-feature` | Frontend — Figma preflight → components → **visual gate** → wiring → checks |
 | `/build-fullstack` | Both in order, with a Figma stage and a **visual gate** between them |
 | `/fix-bug` | Diagnose → fix → regression test → erosion check |
 
-`/build-feature` spawns five agents (`.claude/agents/`), split by **erosion point** rather
+`/api-feature` spawns five agents (`.claude/agents/`), split by **erosion point** rather
 than by lifecycle stage — see [`.claude/agents/README.md`](.claude/agents/README.md) for
 why, and for the agents that are designed but deliberately not yet built.
 
