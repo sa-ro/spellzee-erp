@@ -65,7 +65,24 @@ decorator, manual check per handler)? What's the role/permission model?_
 
 ## Lint / format
 
-_TBD — ESLint config, Prettier config, any project-specific rules._
+**Biome** formats and does fast style linting. No Prettier. **ESLint** does only what Biome
+structurally cannot: the four `import/no-restricted-paths` boundary zones, and type-aware rules
+(`no-floating-promises`, `await-thenable`, `no-misused-promises`).
+
+```
+npm run check        # format check + lint
+npm run lint         # eslint
+npm run format       # biome, writes
+```
+
+Config: `eslint.config.js` (flat, ESLint 9), `biome.json`, `tsconfig.json` at the root.
+
+The boundaries ESLint enforces are the ones the guard hook cannot see — the hook reads paths and
+text, so it catches `await this.merithub.x()` but not the `import` that made it possible. Both
+layers are needed; see `docs/folder-structure.md`.
+
+Sanctioned exemptions: `common/time` and `lib/format` may import `dayjs`; tests may import Prisma
+and `dayjs`; `docs/` is outside Biome's formatter.
 
 ## Libraries in use
 

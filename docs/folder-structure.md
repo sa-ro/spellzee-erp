@@ -302,6 +302,61 @@ Vocabulary only. A threshold is not vocabulary; it is a versioned policy row.
    `handler`, `resolver`, `route` are checked. Renaming a directory changes what the hook enforces,
    so treat a rename as a change to the guard.
 
+## Who enforces these rules
+
+Three layers, and they catch different things. None is a substitute for another.
+
+| Layer | Sees | Catches |
+|---|---|---|
+| **Hook** (`guard-invariants.js`) | file paths + text, on every Bash/Write/Edit | `await this.merithub.x()` in a command; `prisma migrate dev` without `--create-only`; a stored balance column |
+| **ESLint** | the module graph, with type information | the **import** — the step before the call; boundary violations; a floating promise |
+| **erosion-auditor** | the diff, with reasoning | intent — a command that imports the write path and then skips its audit step |
+
+The hook cannot see an `import` statement. That is not a gap to fix in the hook; it is why ESLint
+is here:
+
+```
+hook    →  await this.merithub.createClass()          the call
+eslint  →  import { MerithubClient } from '../../integrations/...'   the import that enabled it
+```
+
+### The split between ESLint and Biome
+
+**Biome formats and does fast style linting.** No Prettier. It ran the whole repo in ~110ms.
+
+**ESLint does two things Biome structurally cannot**, and nothing else:
+
+1. **`import/no-restricted-paths`** — the four boundary zones above. Biome's `noRestrictedImports`
+   matches module names, not directory-to-directory relationships.
+2. **Type-aware rules** — `no-floating-promises`, `await-thenable`, `no-misused-promises`. These
+   need the type checker, which Biome does not have. A dropped promise inside a transaction commits
+   half the work and reports success; that is the highest-value rule in the config.
+
+Keeping ESLint's config small is deliberate. A slow lint gets skipped, and a skipped lint enforces
+nothing.
+
+### Verified, not assumed
+
+Each rule was checked against a fixture that violates it, then the fixtures were deleted:
+
+| Fixture | Result |
+|---|---|
+| `modules/identity/commands/` importing `integrations/merithub` | caught |
+| A command importing `@prisma/client` | caught |
+| A command importing `dayjs` directly | caught |
+| `apps/web` importing from `apps/api` | caught |
+| `packages/contracts` importing app code | caught |
+| An un-awaited promise | caught |
+| `any` | caught |
+| A command importing `common/time` | clean |
+
+### Sanctioned exemptions
+
+- `common/time` and `lib/format` may import `dayjs` — they are the two intended sites.
+- Tests may import Prisma and `dayjs` directly: a constraint test asserts *the database* rejects a
+  violation, which means talking to it.
+- `docs/` is outside Biome's formatter — `tokens.json` is hand-aligned for reading.
+
 ## What is deliberately absent
 
 - **No `services/` layer as a catch-all.** Logic belongs in a command, a query, or `platform/`.
