@@ -391,11 +391,18 @@ explicitly approves them.
   fields requiring approval to edit, duplicate merge rules, teacher-vs-student technical failure,
   the approval role set, and the Phase 1 teacher/HR minimum. Fifteen are value-blocking and become
   flagged placeholder policy rows.
-  Two further blockers the baseline never lists: **do group classes exist in Phase 1** (it changes
-  the ledger's consumption grain), and **can a student have concurrent owners of different
-  responsibility types** (§9 lists seven; our `one_active_owner_per_student` index allows one —
-  a direct conflict).
+  One further blocker the baseline never lists is still open: **do group classes exist in Phase 1?**
+  It changes the ledger's consumption grain — group sessions make `sessions`-to-students
+  many-to-many and consume per student per session.
   Never hard-code a guess as though it were decided.
+
+  **Ownership, answered 2026-09-09:** one active owner per student, **sequential not concurrent** —
+  `one_active_owner_per_student` stands as written, with full history preserved by its
+  `WHERE ended_at IS NULL` predicate. Assigning a ticket to a staff member **transfers ownership to
+  them permanently**; it does not revert when the ticket resolves, so a student's owner becomes
+  whoever handled their most recent ticket. Only staff take assignments; admins may assign anyone,
+  recorded as an override. This confirmed a new invariant — **one open ticket per student** — now in
+  the registry.
 - Raw SQL alongside Prisma is expected and correct for invariant migrations and the reporting layer.
   It is not a workaround.
 - `jsonb` is for genuinely open-ended payloads — webhook bodies, integration snapshots — not for

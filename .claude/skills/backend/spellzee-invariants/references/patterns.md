@@ -51,6 +51,24 @@ A transfer is then: close the old row (`ended_at = now()`) and insert the new
 one **in one transaction**. The index makes a botched transfer fail loudly
 instead of silently producing two owners.
 
+Confirmed 2026-09-09: ownership is **sequential, not concurrent** — the seven
+responsibility types in §9 are held one at a time, so this index is scoped by
+student alone, not by `(student_id, responsibility_type)`. See
+`docs/open-decisions.md` §B.
+
+The same shape covers "one open ticket per student", where the predicate is a
+status set rather than a null check:
+
+```sql
+CREATE UNIQUE INDEX one_open_ticket_per_student
+  ON tickets (student_id)
+  WHERE status NOT IN ('resolved', 'closed');
+```
+
+Note the coupling: this predicate hard-codes which statuses count as closed, so
+**changing the ticket status vocabulary means changing this index**. Keep the
+status list short and settled before writing it.
+
 ---
 
 ## 3. Value constraints (check)
@@ -169,7 +187,8 @@ Keep this list current as invariants are added.
 | Constraint | Table | Mechanism | Rule |
 |---|---|---|---|
 | `teacher_no_overlap` | `sessions` | EXCLUDE gist | A teacher is never double-booked |
-| `one_active_owner_per_student` | `student_ownership` | partial unique | Exactly one current owner |
+| `one_active_owner_per_student` | `student_ownership` | partial unique | Exactly one current owner (sequential, not per-type — confirmed) |
+| `one_open_ticket_per_student` | `tickets` | partial unique | At most one open ticket per student |
 | `ledger_cannot_overdraw` | `session_ledger` | trigger | Entitlement never goes negative |
 | `allocation_requires_certified_teacher` | `class_schedules` | trigger | Uncertified teachers cannot be allocated |
 

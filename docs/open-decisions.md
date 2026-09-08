@@ -111,17 +111,71 @@ so group sessions are unambiguously in the domain. §29 never scopes them in or 
 **Why it matters:** group sessions make `sessions`-to-students many-to-many, and make the ledger
 consume **per student per session** rather than per session. That is the ledger's core grain.
 
-### B. Coordinator ownership — concurrent owners? — direct conflict with a registered invariant
+### B. ~~Coordinator ownership — concurrent owners?~~ — **ANSWERED 2026-09-09**
 
 §9 lists seven responsibility types — *"onboarding, student success, retention, operations,
-academic, ticket or escalation"* — and closes with *"Exact rules remain configurable."*
+academic, ticket or escalation"* — and closes with *"Exact rules remain configurable."* That left it
+open whether those types can be held concurrently, which would have made
+`one_active_owner_per_student` wrong.
 
-Our invariants registry has `one_active_owner_per_student`: a partial unique index on
-`student_ownership` allowing exactly one current owner.
+**Answer: sequential, not concurrent.** One active owner per student at a time. The registered
+invariant stands as written.
 
-**If those seven types can be held concurrently by different people, that index is wrong** and must
-be scoped by responsibility type. This is a conflict between the baseline and an invariant we have
-already written down — resolve it before the ownership table exists.
+```sql
+CREATE UNIQUE INDEX one_active_owner_per_student
+  ON student_ownership (student_id)
+  WHERE ended_at IS NULL;
+```
+
+The `WHERE ended_at IS NULL` is what makes history free: closed rows leave the index, so a student
+accumulates unlimited ownership history while exactly one row stays current. A transfer closes the
+old row and inserts the new one **in one transaction** — a botched transfer fails loudly instead of
+silently producing two owners.
+
+**History is required and permanent.** Per §9: owner, responsibility type, start and end dates,
+transfer reason, who it came from, and whether the row is parent-facing. Rows are never deleted and
+never edited; setting `ended_at` is the only update.
+
+#### Ticket assignment transfers ownership — and it is permanent
+
+Assigning a ticket to a staff member **makes them the student's owner**, and they stay the owner
+after the ticket is resolved. Ownership does not revert.
+
+```
+Feb 1   Ravi    student_success   Feb 1 → Mar 15    (closed)
+Mar 15  ticket assigned to Divya
+        Divya   ticket            Mar 15 → NULL     (active — Ravi closed)
+Mar 20  ticket resolved                              (Divya stays owner)
+Jun 3   new ticket assigned to Kumar
+        Divya   ticket            Mar 15 → Jun 3    (closed)
+        Kumar   ticket            Jun 3  → NULL     (active)
+```
+
+The consequence, confirmed as intended: over time a student's owner becomes **whoever handled their
+most recent ticket**. The original onboarding or retention coordinator does not come back
+automatically. Ownership therefore answers *"who is responsible now"*, not *"who owns the
+relationship"* — and the ownership history is where the relationship story lives.
+
+Only **staff** take ticket assignments — never teachers. Admins may assign any staff member to any
+student; that path is an **override** and records who, what, why, old value, new value per §22.5.
+
+#### New invariant this creates
+
+Confirmed: **one open ticket per student at a time.** That is a cross-row rule, so it is a database
+constraint, not a service check:
+
+```sql
+CREATE UNIQUE INDEX one_open_ticket_per_student
+  ON tickets (student_id)
+  WHERE status NOT IN ('resolved', 'closed');
+```
+
+Same shape as the ownership index. Added to the registry in
+`.claude/skills/backend/spellzee-invariants/references/patterns.md`.
+
+**Still open:** the exact `status` values that count as closed. The constraint's predicate depends
+on the ticket status vocabulary, which §20 does not fully enumerate — settle it with the ticket
+table, not before.
 
 ### C. Break / resume entitlement semantics
 
