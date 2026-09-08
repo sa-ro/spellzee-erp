@@ -3,9 +3,10 @@
 For picking this up on another machine, or in a fresh session. Read this first, then
 `CLAUDE.md`.
 
-**Where things stand:** the tooling is built and the environment works. There is **no application
-code yet** — no `package.json`, no `apps/`, no Prisma schema. The next step is the first schema, and
-it is now unblocked.
+**Where things stand:** the tooling is built, the environment works, and the repository is
+scaffolded and linted. There is **no application code yet** — the directory tree exists as empty
+`.gitkeep` folders, `package.json` carries lint tooling only, and there is no Prisma schema, no
+NestJS app and no Next.js app. The next step is the first schema, and it is now unblocked.
 
 ---
 
@@ -73,6 +74,10 @@ the persistent test database would need updating.
 | One open ticket per student | New invariant, verified | invariants registry |
 | MCP servers | Few, and none that reach the codebase | `tradeoff-library.md` decision 9 |
 | Frontend stack | **shadcn/ui + TanStack Table + TanStack Query**, Zustand, Tailwind | `tradeoff-library.md` decision 10 |
+| Client vs server state | Server → TanStack Query; **filters → the URL**; theme/density → Zustand | `skills/frontend/state-management` |
+| Dates | **Day.js** + `utc`/`timezone` plugins, **one import site** | `project-conventions` |
+| Lint / format | **ESLint** for boundaries + type-aware rules, **Biome** for format | `docs/folder-structure.md` |
+| Repo scaffold | Directory tree exists, `.gitkeep`-held, no code | `docs/folder-structure.md` |
 | Design tokens | Template only — every value `TBD`, format settled as CSS custom properties | `docs/design/` |
 
 ### Auth, specifically
@@ -80,6 +85,50 @@ the persistent test database would need updating.
 Authentication is deferred; **authorization is not**. RBAC, maker–checker and permission-by-
 relationship get built in Phase 1 as normal. Authentication sits behind an adapter with a
 clearly-labelled session placeholder. Swapping providers later must not touch an authorization rule.
+
+---
+
+## What is on disk now
+
+```
+apps/api/src/     modules · platform · integrations · workers · common   (empty, .gitkeep)
+apps/web/src/     app · features · components/ui · lib                   (empty)
+packages/contracts/  identity · operations · finance · governance · shared
+prisma/migrations/
+package.json      lint tooling ONLY — no NestJS, no Prisma, no Next.js yet
+eslint.config.js · biome.json · tsconfig.json
+```
+
+84 directories, 52 `.gitkeep`. All ten domain modules exist, not just Phase 1's four, so the
+boundary is visible before anything is written into the wrong one.
+
+`npm install && npm run check` passes on a clean clone. Biome's postinstall may need
+`npm approve-scripts @biomejs/biome` — both binaries work regardless.
+
+### Linting is real, not aspirational
+
+Four of the six rules in `docs/folder-structure.md` now fail a build. The reason ESLint exists
+alongside the hook is structural, and worth not re-deriving:
+
+```
+hook     sees paths and text   →  `await this.merithub.x()` in a command
+eslint   sees the module graph →  the `import` that made that call possible
+auditor  sees the diff         →  intent
+```
+
+The hook returns SILENT on a boundary-violating import — verified, not assumed. ESLint carries the
+four `import/no-restricted-paths` zones, the `dayjs` and `@prisma/client` restrictions, and the
+type-aware rules Biome cannot express (`no-floating-promises` most of all: a dropped promise inside
+a transaction commits half the work and reports success).
+
+Each rule was checked against a fixture that violates it; the fixtures were then deleted.
+
+### The Day.js rule
+
+`dayjs` may be imported **only** by `apps/api/src/common/time` and `apps/web/src/lib/format` —
+ESLint enforces it. A bare `dayjs()` resolves in the host's timezone: right on a laptop in India,
+wrong in a UTC container, and silent either way. `APP_TIMEZONE` in `.env.example` is a flagged
+placeholder — the baseline implies India but never declares a timezone policy.
 
 ---
 
@@ -205,13 +254,18 @@ filesystem MCPs are unwatched paths around every guard.
 ## Suggested next steps
 
 1. **Recreate the environment** — PostgreSQL 17 on 5433, both databases, `btree_gist`, `.env`.
-2. **Get answers to shape blockers 1 and 4** at minimum. They are business questions; nobody can
+2. **`npm install`**, then `npm run check` to confirm the lint layer works on the new machine.
+3. **Get answers to shape blockers 1 and 4** at minimum. They are business questions; nobody can
    derive them from the code.
-3. **Run `/api-feature`** for the first slice — identity and duplicate control is the natural start,
+4. **Run `/api-feature`** for the first slice — identity and duplicate control is the natural start,
    since it has the fewest blocked dependencies. Phase 1 of that chain will re-check the open
    decisions; Phase 3 is the schema gate and will stop for approval.
-4. **Fill `docs/design/`** once the Figma MCP is connected. The token format is settled (CSS custom
+5. **Fill `docs/design/`** once the Figma MCP is connected. The token format is settled (CSS custom
    properties), so the Figma values drop straight in.
+
+Runtime dependencies are deliberately absent from `package.json`. NestJS, Prisma and Next.js get
+installed when the first schema and the first module land — not before, because their versions and
+adjacent choices interact with decisions still open.
 
 ---
 
@@ -228,3 +282,15 @@ filesystem MCPs are unwatched paths around every guard.
   `controller`, `service`, `handler`, `route` are checked. A rename changes what is enforced.
 - **The 15 policy placeholder values in `docs/open-decisions.md` are placeholders**, not decisions.
   None was chosen by anyone with authority to choose it.
+- **The frontend query layer is TanStack Query, not RTK Query.** The frontend skills were written
+  against RTK Query and carry scoping notes mapping each rule across. Do not build an
+  `axiosBaseQuery` — that is an RTK Query abstraction with no TanStack equivalent.
+- **Table filters go in the URL, not Zustand.** A coordinator must be able to paste a link; refresh
+  and back must both work. A filter in a store breaks all three, silently.
+- **There is no `utils/` and no `constants/`, both on purpose.** Helpers live in named folders
+  (`common/time`, `common/ids`, `lib/format`). Domain vocabulary lives in `packages/contracts/shared`
+  because the frontend renders the same strings; a *threshold* is a versioned policy row, and a
+  `constants/` folder is exactly where `CANCELLATION_CUTOFF_HOURS = 24` would get written.
+  `lib/utils.ts` is the single exception — shadcn imports `cn` from that literal path.
+- **`dayjs` has two sanctioned import sites** and ESLint enforces it. A bare `dayjs()` uses the
+  host's timezone and fails silently.

@@ -3,9 +3,10 @@
 Operations and delivery platform for Spellzee (online tutoring), architected as the
 foundation of a broader ERP.
 
-**Status: pre-code.** This repository currently holds the business baseline, the
-architecture decisions, and the tooling that will build against them. No application
-code exists yet.
+**Status: scaffolded, no application code.** The repository holds the business baseline, the
+architecture decisions, the build tooling, and an empty directory tree with linting that already
+enforces its boundaries. There is no Prisma schema, no NestJS app and no Next.js app yet —
+`package.json` carries lint tooling only.
 
 ## What is here
 
