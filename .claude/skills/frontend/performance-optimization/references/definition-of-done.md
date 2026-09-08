@@ -32,7 +32,7 @@ A feature/release cannot be marked "done" until every item below is checked.
 - [ ] Render-blocking CSS avoided; critical CSS prioritized
 
 ## 6. Data & Caching
-- [ ] RTK Query cache freshness configured to avoid redundant fetches
+- [ ] Query cache freshness configured to avoid redundant fetches (here: TanStack Query's `staleTime` / `gcTime`)
 - [ ] Static/rarely-changing content uses SSG/ISR, not always-fresh fetching
 - [ ] Predictable next-screen data prefetched where applicable
 

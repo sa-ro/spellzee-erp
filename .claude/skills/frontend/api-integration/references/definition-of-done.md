@@ -7,7 +7,7 @@ A feature involving API integration cannot be marked "done" until every item bel
 - [ ] No second HTTP client introduced alongside axios; no raw `fetch` calls
 
 ## 2. Data Fetching Layer
-- [ ] All calls go through RTK Query using the shared `axiosBaseQuery` wrapper — no scattered raw `axios.get/post` in components
+- [ ] All calls go through TanStack Query (`useQuery` / `useMutation`) using the shared axios instance — no scattered raw `axios.get/post` in components. **There is no `axiosBaseQuery` here** — that is an RTK Query concept; call axios directly inside `queryFn`
 - [ ] Request/response types explicit (OpenAPI-generated or shared `types/api.ts`) — no `any`
 
 ## 3. Error Handling
@@ -22,7 +22,7 @@ A feature involving API integration cannot be marked "done" until every item bel
 
 ## 5. Pagination & Caching
 - [ ] Growing lists use cursor-based pagination, not offset/limit
-- [ ] Cache invalidation explicit via RTK Query tags
+- [ ] Cache invalidation explicit via `queryClient.invalidateQueries({ queryKey })`, with a query-key factory per resource — not a page refresh
 
 ## 6. Real-Time Features
 - [ ] Firebase listeners torn down on unmount or session-ID change
@@ -50,7 +50,7 @@ A feature involving API integration cannot be marked "done" until every item bel
 ## 11. Reliability & Correctness
 - [ ] Every axios request has an explicit timeout configured
 - [ ] Critical mutations (quiz/assignment submission) include an idempotency key
-- [ ] RTK Query cache freshness (`keepUnusedDataFor`, `refetchOnFocus`, `refetchOnReconnect`) configured deliberately per endpoint
+- [ ] Cache freshness (`staleTime`, `gcTime`, `refetchOnWindowFocus`, `refetchOnReconnect`) configured deliberately per query — not left at defaults
 - [ ] `isLoading` vs `isFetching` used correctly (initial skeleton vs background-refresh indicator)
 - [ ] All dates cross the API boundary as UTC ISO 8601; local conversion only at render layer
 

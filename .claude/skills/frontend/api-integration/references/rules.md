@@ -1,5 +1,30 @@
 # API Integration Rules
 
+> ## Spellzee: read this before applying any rule below
+>
+> These rules were written against **RTK Query + Firebase**. This project uses
+> **TanStack Query**, and has **no Firebase**. The reasoning in each rule holds; several
+> API names do not.
+>
+> | Rule | As written | Here |
+> |---|---|---|
+> | **1** | Firebase sits alongside REST for realtime | **No Firebase, no realtime.** Internal dashboards poll |
+> | **3** | RTK Query with a custom `axiosBaseQuery` wrapper | **There is no `axiosBaseQuery` in TanStack Query — do not build one.** Call the shared axios instance directly inside `queryFn`. The rule's actual point stands: no scattered `axios.get` in components or `useEffect` |
+> | **8** | Invalidation via `tagTypes`/`providesTags`/`invalidatesTags` | `queryClient.invalidateQueries({ queryKey })`, with a keyed query-key factory per resource |
+> | **9** | Firebase listener lifecycle | **Does not apply** |
+> | **23** | `keepUnusedDataFor` / `refetchOnFocus` / `refetchOnReconnect` | `gcTime` / `staleTime` / `refetchOnWindowFocus` / `refetchOnReconnect` |
+> | **24** | `isLoading` vs `isFetching` | Same distinction, same names |
+> | **29** | Multi-tenant `org_id` scoping | **Does not apply** — single tenant |
+> | polling | `pollingInterval` | `refetchInterval` |
+>
+> Rules **21** (explicit timeouts) and **22** (idempotency keys) matter *more* here than
+> in a typical app: the backend write path is transactional and its external edge is
+> retry-driven, so a duplicate submission is a correctness problem, not a UX annoyance.
+>
+> Why TanStack: the grid is TanStack Table, so it is one ecosystem rather than two, and
+> RTK Query would require a Redux store this project has no other use for.
+> See `tradeoff-library.md` decision 10.
+
 ## Rule 1: REST Only — Axios as the Single Common HTTP Client
 - No GraphQL. All API communication is REST, and **axios** is the one HTTP client used project-wide — never raw `fetch`, never a second HTTP library introduced alongside axios.
 - Firebase (realtime) sits alongside REST for live features (live class presence, chat, quiz leaderboards) — it is not a REST replacement, it's a separate category for realtime sync.

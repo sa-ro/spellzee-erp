@@ -1,5 +1,28 @@
 # State Management Rules
 
+> ## Spellzee: read this before applying any rule below
+>
+> These rules were written against **RTK Query + Firebase**, with the global-state library
+> left open. Both are settled here.
+>
+> | Rule | As written | Here |
+> |---|---|---|
+> | **1** | Server state → RTK Query owns it | **TanStack Query** owns it. The prohibition is the point and still holds: never copy fetched data into a client store |
+> | **1a** | Choose Zustand or Redux Toolkit by project scope | **Answered: Zustand.** Do not re-open it, do not add Redux Toolkit alongside |
+> | **4** | Normalize via `createEntityAdapter` | TanStack Query's cache is already keyed by query key. Normalize by hand only where a client store genuinely holds a collection — which here it does not |
+> | **9** | RTK Query for fetching, thunks for other side effects | TanStack Query for fetching. There are no thunks; a side effect that is not a fetch is a plain function |
+> | Firebase rules | listeners, realtime sync | **Do not apply** — no Firebase, no realtime. Dashboards poll |
+>
+> **The client-global surface here is deliberately tiny** — theme, density, sidebar
+> collapsed. That is what Zustand holds, and it is the whole of it.
+>
+> **Rule 1's URL-state category carries more weight on this project than usual.** Table
+> filters, sort and page belong in the URL, not in Zustand. A coordinator saying *"send me
+> that filtered list"* must be able to paste a link, and refresh and back must both work —
+> a filter in a client store breaks all three silently, and nothing fails loudly when it does.
+>
+> See `tradeoff-library.md` decision 10.
+
 ## Rule 1: Categorize State Before Choosing a Tool
 Every piece of state falls into one of 5 categories — identify which one BEFORE deciding where it lives:
 - **Server state** — data fetched from an API/GraphQL/Firebase (RTK Query owns this, never Redux/Zustand slices)

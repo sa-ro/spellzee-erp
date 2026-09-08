@@ -1,6 +1,6 @@
 ---
 name: api-integration
-description: Use this skill whenever the user is fetching data via REST/axios, structuring RTK Query calls, implementing pagination or polling, handling auth/token refresh, uploading files, or building offline-resilient features for an EdTech product. Trigger for phrases like "how do I call this API", "how do I paginate this list", "handle token refresh", "upload this video", "the app breaks when offline", "mock this API for tests", or any request involving fetching, mutating, or syncing data with a backend. Also trigger for Definition of Done review on an API-integration feature.
+description: Use this skill whenever the user is fetching data via REST/axios, structuring TanStack Query calls (`useQuery`/`useMutation`/`queryClient`), implementing pagination or polling, handling auth/token refresh, uploading files, or building offline-resilient features for an EdTech product. Trigger for phrases like "how do I call this API", "how do I paginate this list", "handle token refresh", "upload this video", "the app breaks when offline", "mock this API for tests", or any request involving fetching, mutating, or syncing data with a backend. Also trigger for Definition of Done review on an API-integration feature.
 ---
 
 # API Integration Skill
@@ -21,7 +21,7 @@ Defines how the frontend fetches, mutates, caches, and stays resilient when talk
 **TypeScript is non-negotiable** in either case — no `any` from any API response, ever.
 
 ## When to use this
-- Structuring RTK Query endpoints backed by axios
+- Structuring TanStack Query hooks backed by axios
 - Implementing pagination, caching, or cache invalidation
 - Handling auth token refresh or role-based (student/teacher/admin) API responses
 - ~~Building real-time features via Firebase~~ — not applicable on Spellzee (see scoping note below)
@@ -78,12 +78,12 @@ a UX annoyance.
 
 1. **REST only, axios as the single common HTTP client** — one shared instance, no fetch, no second HTTP library
 2. **Project detection before implementation** — follow existing axios/interceptor convention, or set one up cleanly for new projects
-3. **RTK Query with a custom axios `baseQuery`** — never scattered raw axios calls in components
+3. **TanStack Query hooks calling a shared axios instance** — never scattered raw axios calls in components. (No `axiosBaseQuery` — that is RTK Query's abstraction; call axios inside `queryFn`)
 4. **Type safety via shared types or OpenAPI codegen** — never `any`
 5. **Consistent error shape via the axios interceptor** — network failures vs 4xx/5xx distinguished
 6. **Centralized auth via axios interceptors** — token refresh in one place, concurrent 401s queued not parallel-retried
 7. **Cursor-based pagination** for growing lists — never offset/limit for live-changing data
-8. **Explicit cache invalidation via RTK Query tags**
+8. **Explicit cache invalidation via `queryClient.invalidateQueries`** — with a query-key factory per resource
 9. ~~**Real-time lifecycle discipline (Firebase)**~~ — **not applicable on Spellzee**: polling + ETags instead, SSE if push is ever needed
 10. **Retry with exponential backoff** — capped attempts, retryable vs non-retryable distinguished
 11. **Offline & low-bandwidth resilience (EdTech)** — queue critical writes, persist in-progress answers locally, cache content where possible
@@ -98,7 +98,7 @@ a UX annoyance.
 20. **Debounce/throttle search-as-you-type** — cancel stale requests when a newer one fires
 21. **Explicit timeout on every request** — never allow indefinite hangs on poor connections
 22. **Idempotency keys for critical mutations** — prevent duplicate quiz/assignment submissions from retries or double-clicks
-23. **Deliberate RTK Query cache freshness policy** — `keepUnusedDataFor`/`refetchOnFocus`/`refetchOnReconnect` set per endpoint, not left at defaults
+23. **Deliberate cache freshness policy** — `staleTime`/`gcTime`/`refetchOnWindowFocus`/`refetchOnReconnect` set per query, not left at defaults
 24. **Distinguish `isLoading` from `isFetching`** — correct initial-load vs background-refresh UI
 25. **Environment-based base URL with startup validation** — fail fast if missing, never hardcoded
 26. **UTC/ISO 8601 dates across the API boundary** — local conversion only at render layer
@@ -110,11 +110,11 @@ a UX annoyance.
 ## Workflow
 
 1. **Step 0 first, always**: detect existing axios/interceptor convention, or set one up for a new project.
-2. Wire the feature through RTK Query + the shared `axiosBaseQuery` with proper types (Rules 3-4).
+2. Wire the feature through TanStack Query hooks calling the shared axios instance, with proper types (Rules 3-4).
 3. Add error normalization, auth handling, pagination, and cache invalidation (Rules 5-8).
 4. For EdTech-critical paths (submissions, uploads, offline resilience): apply Rules 10-12 explicitly — these are not optional edge cases for this domain. (Rule 9 is out of scope here — see the scoping note.)
 5. Before sign-off: run through `references/definition-of-done.md`.
 
 ## Notes
-- This skill governs how the frontend talks to the backend. For where fetched data lives once retrieved, see `state-management` (server state → RTK Query is shared ground between both skills). For form submission UX, see `form-handling-validation`.
+- This skill governs how the frontend talks to the backend. For where fetched data lives once retrieved, see `state-management` (server state → TanStack Query is shared ground between both skills). For form submission UX, see `form-handling-validation`.
 - Grounded in official Redux Toolkit, Axios, Firebase, MSW, and Zod docs, plus recognized community authorities (Kent C. Dodds) — see `references/sources.md`.

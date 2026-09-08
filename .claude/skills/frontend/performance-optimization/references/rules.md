@@ -40,8 +40,9 @@
 ## Rule 11: Memoization Is Deliberate, Not Blanket (Cross-References `component-architecture` Rule 15)
 - Same discipline as the state-management/component-architecture skills: `React.memo`/`useMemo`/`useCallback` applied where a measured re-render cost exists, not wrapped around everything reflexively — over-memoization adds its own overhead and complexity without guaranteed benefit.
 
-## Rule 12: RTK Query / API Layer Feeds Performance, Not Fights It
-- Cross-references the `api-integration` skill's cache-freshness rule (`keepUnusedDataFor`, `refetchOnFocus`) — correct cache configuration avoids redundant network requests that would otherwise slow perceived performance, especially on the mobile/low-bandwidth connections common in the EdTech audience.
+## Rule 12: The Query Layer Feeds Performance, Not Fights It
+*(Spellzee: the query layer is **TanStack Query** — `staleTime`/`gcTime` for freshness, `queryClient.prefetchQuery` for prefetch.)*
+- Cross-references the `api-integration` skill's cache-freshness rule (`keepUnusedDataFor`, `refetchOnFocus` — `staleTime`, `refetchOnWindowFocus` here) — correct cache configuration avoids redundant network requests that would otherwise slow perceived performance, especially on the mobile/low-bandwidth connections common in the EdTech audience.
 - Prefetch data for the likely next screen (e.g. prefetch the next lesson while the student is on the current one) where the access pattern is predictable, using RTK Query's `prefetch` or Next.js route prefetching.
 
 ## Rule 13: Video and Media Are Optimized for Low-Bandwidth Delivery (EdTech-Critical)

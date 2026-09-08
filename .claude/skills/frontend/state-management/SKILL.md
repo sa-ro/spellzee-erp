@@ -1,11 +1,11 @@
 ---
 name: state-management
-description: Use this skill whenever the user is deciding where state should live, choosing between Zustand and Redux Toolkit, structuring stores/slices, working with RTK Query, handling Firebase realtime data, or debugging state-sync/re-render issues in a React/Next.js app. Trigger for phrases like "should this be in Zustand or Redux", "where should I store this state", "my component re-renders too much", "how do I structure this store/slice", "cache invalidation", "optimistic update", or any request involving global state, server state, or Firebase listeners. Also trigger for Definition of Done review on a state-management feature.
+description: Use this skill whenever the user is deciding where state should live, structuring a Zustand store, working with TanStack Query, deciding between a store and the URL, or debugging state-sync/re-render issues in a React/Next.js app. Trigger for phrases like "should this be in Zustand or Redux", "where should I store this state", "my component re-renders too much", "how do I structure this store/slice", "cache invalidation", "optimistic update", or any request involving global state, server state, or Firebase listeners. Also trigger for Definition of Done review on a state-management feature.
 ---
 
 # State Management Skill
 
-Defines how state is categorized, structured, and synchronized across a React/Next.js app using Zustand or Redux Toolkit (chosen by project scope), RTK Query, and Firebase — so state has one source of truth and no category-mixing bugs.
+Defines how state is categorized, structured, and synchronized across a React/Next.js app using **Zustand** for client state and **TanStack Query** for server state — so state has one source of truth and no category-mixing bugs.
 
 ## Spellzee scoping (read before applying the rules below)
 
@@ -38,32 +38,29 @@ The client-global surface here is genuinely small — a handful of preferences �
 - If the existing project mixes both libraries already (technical debt from before this skill existed), don't silently pick one — flag it to the user and ask whether to consolidate or keep both scoped to their current areas.
 
 **Is this a new project / first state-management decision in this codebase?**
-- Do not assume Zustand or Redux Toolkit by default.
-- Ask the user about project scope before recommending: expected app complexity, team size, whether heavy async orchestration is expected, whether DevTools time-travel debugging matters to them.
-- Recommend based on their answers using the scope criteria in Rule 1a (`references/rules.md`), then proceed with that choice consistently for the rest of the project.
+- **On Spellzee this is already answered — Zustand, with TanStack Query for server state.** Do not ask again and do not weigh Redux Toolkit; see the scoping note above.
+- *(On any other project: do not assume a default. Ask about scope, then apply Rule 1a's criteria.)*
 
-**TypeScript is non-negotiable in either case** — new or existing project, Zustand or Redux Toolkit. No `any`, no untyped stores/slices, ever.
+**TypeScript is non-negotiable in either case.** No `any`, no untyped stores, ever.
 
 ## When to use this
 - Deciding whether something belongs in a global store, Context, local state, URL, or a form library
-- Deciding between Zustand and Redux Toolkit for a given project
-- Structuring a Zustand store or Redux Toolkit slice/RTK Query endpoint
+- Structuring a Zustand store or a TanStack Query hook
 - Debugging unnecessary re-renders or stale/duplicated data
-- Working with Firebase realtime listeners
 - Reviewing a PR or running Definition of Done for a state-related feature
 
 ## Core principles (see `references/rules.md` for full detail with rationale)
 
 1. **Categorize state first** — server / client-global / UI-local / URL / form — before picking a tool
-2. **Global-state library chosen by project scope, applied consistently** — Zustand for smaller/simpler scope, Redux Toolkit for larger/complex scope with heavy async and enforced patterns; never mix both for the same state category; TypeScript is non-negotiable either way
-3. **Server state → RTK Query only** — never duplicate fetched data into a manual global store
-4. **Normalize entity collections** — `{ ids, entities }`, via `createEntityAdapter` in Redux Toolkit or the same shape applied manually in Zustand
+2. **One global-state library, applied consistently** — here, Zustand. Never mix in a second for the same state category; TypeScript is non-negotiable
+3. **Server state → TanStack Query only** — never duplicate fetched data into a client store
+4. **Normalize entity collections** where a client store genuinely holds one — `{ ids, entities }`. TanStack Query's cache is already keyed, so this rarely applies here
 5. **Derived data is computed, never stored** — memoized selectors, not extra state fields
 6. **Selectors: memoized and narrow** — avoid over-selecting and causing unrelated re-renders
 7. **Not everything needs a global store** — local state stays local until an actual sharing need exists
 8. **Context vs global store — explicit boundary** — Context for low-frequency broad reads, Zustand/Redux for frequent/multi-writer state
-9. **One consistent async pattern** — RTK Query for fetching, thunks only for non-fetch side effects
-10. **Firebase listener lifecycle** — always unsubscribe; treat as part of the server-state boundary
+9. **One consistent async pattern** — TanStack Query for fetching; a plain function for a side effect that is not a fetch (there are no thunks here)
+10. ~~**Firebase listener lifecycle**~~ — **not applicable**: no Firebase, no realtime. Dashboards poll
 11. **Explicit cache invalidation** — tags, not scattered manual refetches
 12. **Optimistic updates need rollback paths** — never silent-fail on network error
 13. **Granular loading states** — per-request, not one global spinner
@@ -72,17 +69,16 @@ The client-global surface here is genuinely small — a handful of preferences �
 16. **Persistence allowlist, not denylist**
 17. **State colocation** — state lives where it's used until promotion is actually justified
 18. **Pure, testable reducers/selectors** — no side effects inside store logic
-19. **Redux DevTools disabled in production**
+19. **Store devtools disabled in production**
 
 ## Workflow
 
 1. **Step 0 first, always**: detect existing project context (see above) — follow existing library, or ask+recommend for new projects.
-2. When a new piece of state is introduced: categorize it first (Rule 1), then use the project's established global-state library if it's client-global.
+2. When a new piece of state is introduced: categorize it first (Rule 1). If it is a table filter, sort or page, it goes in the **URL** — not a store.
 3. When structuring a store/slice: normalize collections, keep derived values out, write narrow memoized selectors, ensure full TypeScript typing.
-4. When wiring async: RTK Query with proper tags; add rollback for any optimistic update.
-5. When using Firebase: wire cleanup in the same effect that establishes the listener.
+4. When wiring async: TanStack Query with a keyed query-key factory and explicit `invalidateQueries`; add rollback for any optimistic update.
 6. Before sign-off: run through `references/definition-of-done.md`.
 
 ## Notes
 - This skill governs where/how state lives. For component structure itself, see `component-architecture`. For form-specific state (validation, dirty/touched), see `form-handling-validation`.
-- Grounded in official Redux Toolkit/RTK Query/Zustand/React/Firebase docs and recognized community authorities (Mark Erikson, TkDodo, Kent C. Dodds) — see `references/sources.md`.
+- Grounded in official Zustand/TanStack Query/React docs (the Redux Toolkit and Firebase sources in `references/sources.md` are retained for the general principles, not as this project's tooling) and recognized community authorities (Mark Erikson, TkDodo, Kent C. Dodds) — see `references/sources.md`.

@@ -7,7 +7,7 @@ A piece of state/feature cannot be marked "done" until every item below is check
 - [ ] State correctly categorized (server / client-global / UI-local / URL / form) before implementation
 - [ ] Global-state library (Zustand or Redux Toolkit) chosen deliberately by project scope, not mixed within the same category
 - [ ] Store/slice fully typed (Zustand: curried `create<T>()(...)` pattern; Redux Toolkit: `createSlice` generics) — no `any`
-- [ ] No server data manually duplicated into a global store outside RTK Query
+- [ ] No server data copied into Zustand — TanStack Query is the only owner of server state
 
 ## 2. Shape & Derivation
 - [ ] Entity collections normalized (`ids` + `entities`), using `createEntityAdapter` where applicable
@@ -22,7 +22,7 @@ A piece of state/feature cannot be marked "done" until every item below is check
 - [ ] Context used only for low-frequency, broadly-read values; Redux used for frequent/multi-writer state
 
 ## 5. Async & Caching
-- [ ] One consistent async pattern used (RTK Query for fetching; thunks only for non-fetch side effects)
+- [ ] One consistent async pattern used (TanStack Query for fetching; a plain function for a side effect that is not a fetch — there are no thunks here)
 - [ ] Cache invalidation via explicit tags, not scattered manual refetches
 - [ ] Optimistic updates (if used) have an explicit rollback path
 - [ ] Loading state is per-request, not a single global flag
@@ -39,7 +39,7 @@ A piece of state/feature cannot be marked "done" until every item below is check
 
 ## 8. Testability
 - [ ] Reducers are pure — no side effects, no API calls, no non-deterministic values
-- [ ] Side effects live in RTK Query endpoints/thunks/middleware only
+- [ ] Side effects live in mutations or explicit functions — never inside a Zustand store
 
 ## Sign-off
 Only mark "state-management: done" once all sections are checked.
