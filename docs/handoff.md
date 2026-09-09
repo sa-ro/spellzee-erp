@@ -259,28 +259,36 @@ session. That would break "compensation is a separate session", so it was left a
 
 ---
 
-## What blocks the first schema — one thing, and it is not technical
+## What blocked the first schema — all six now answered
 
-Six **shape-blocking** business decisions from `docs/open-decisions.md`. None can be guessed; each
-changes tables:
+Six **shape-blocking** business decisions from `docs/open-decisions.md`, all resolved 2026-09-09.
+None were guessed — each changes tables, so each got a real decision, recorded with reasoning in
+`docs/open-decisions.md`:
 
-1. **Capacity unit** — hours / minutes / sessions / weighted slots. Four grains, not four values.
-   The baseline contradicts itself: §13.3's example is in sessions, §30 leaves it open.
-2. **Fields requiring approval to edit** — per-field registry or per-action enum? Decides the shape
-   of the approval tables every write path traverses.
-3. **Duplicate merge rules** — "block **or** require approval" are two outcomes; which ID survives is
-   unstated. The confidence *threshold* is fine as a placeholder; the merge model is not.
-4. **Teacher vs student technical failure** — §15.4's "generally", "may follow a separate policy" and
-   "**verified**" are three ambiguities in one sentence. Decides the ledger's entry types.
-5. **Approval role set** — §22.4 is "illustrative, not final" but is the only list of actors.
-6. **Teacher/HR minimum for Phase 1** — certification workflow is Phase 3, but allocation is Phase 1
-   and `allocation_requires_certified_teacher` reads `teachers.certification_status`.
+1. **Capacity unit → sessions.** Matches §13.3's worked example directly — an integer count, no
+   duration arithmetic. Recorded as a shape decision, not a `capacity.unit` policy row.
+2. **Fields requiring approval → per-action command, not a per-field registry.** A sensitive field
+   gets its own dedicated, always-gated command (e.g. `UpdateStudentDateOfBirth`); an ordinary field
+   uses a separate ungated command. Matches "one command per file"; avoids a generic field-approval
+   rule engine.
+3. **Duplicate merge rules → block outright on high confidence; older ID always survives a merge.**
+   No pending/approval state for high-confidence duplicates. The newer ID is retired but stays
+   resolvable, redirecting to the survivor.
+4. **Teacher vs student technical failure → student-side consumes entitlement**, same as a plain
+   absence — no verification workflow, no separate protected path. Teacher/Spellzee-side failure
+   still protects entitlement and triggers compensation, unchanged.
+5. **Approval role set → §22.4's four roles as-is** (Staff/Coordinator, Team Lead/Manager, Finance,
+   Restricted Admin), **single-level approval** — one qualified approver's decision is final, no
+   escalation chain. Matches "dozens of staff" scale.
+6. **Teacher/HR Phase 1 minimum → identity + certification_status + subjects/languages.** No
+   availability, leave or performance fields yet — those wait for their own Phase 3 work.
 
-Items 1 and 4 are the ones to ask first: capacity unit blocks the capacity tables entirely, and the
-failure-rules answer defines the ledger vocabulary.
+Also previously answered: coordinator ownership (sequential, one active owner) and group classes
+(both 1-to-1 and group in scope for Phase 1) — see the "Decided in the last session" section above.
 
-**Both previously-unlisted blockers are now answered** — ownership (sequential) and group classes
-(both in scope). That is what unblocked schema work.
+**Nothing shape-blocking remains open for the first schema slice.** The 15 value-blocking items in
+`docs/open-decisions.md` still take flagged placeholder policy rows, per usual — that is expected
+and does not block starting `/api-feature`.
 
 ---
 
@@ -312,14 +320,17 @@ filesystem MCPs are unwatched paths around every guard.
 
 ## Suggested next steps
 
-1. **Recreate the environment** — PostgreSQL 17 on 5433, both databases, `btree_gist`, `.env`.
-2. **`npm install`**, then `npm run check` to confirm the lint layer works on the new machine.
-3. **Get answers to shape blockers 1 and 4** at minimum. They are business questions; nobody can
-   derive them from the code.
-4. **Run `/api-feature`** for the first slice — identity and duplicate control is the natural start,
-   since it has the fewest blocked dependencies. Phase 1 of that chain will re-check the open
-   decisions; Phase 3 is the schema gate and will stop for approval.
-5. **Fill `docs/design/`** once the Figma MCP is connected. The token format is settled (CSS custom
+1. ~~**Recreate the environment**~~ — **DONE 2026-09-09.** PostgreSQL 17.11 on 5433, both databases,
+   `btree_gist`, `.env` copied. `npm install` and `npm run check` both pass.
+2. ~~**Get answers to all six shape-blockers**~~ — **DONE 2026-09-09.** Capacity unit (sessions),
+   approval-field modeling (per-action command), duplicate merge rules (block outright / older ID
+   survives), student-side technical failure (consumes), approval role set (§22.4's four, single
+   level), teacher/HR Phase 1 minimum (identity + status + subjects/languages). See above.
+3. **Run `/api-feature`** for the first slice — identity and duplicate control is the natural start,
+   since it has the fewest blocked dependencies and both duplicate-control decisions (#3) are now
+   settled. Phase 1 of that chain will re-check the open decisions; Phase 3 is the schema gate and
+   will stop for approval.
+4. **Fill `docs/design/`** once the Figma MCP is connected. The token format is settled (CSS custom
    properties), so the Figma values drop straight in.
 
 Runtime dependencies are deliberately absent from `package.json`. NestJS, Prisma and Next.js get

@@ -1,0 +1,273 @@
+// Spellzee ERP — Prisma schema
+//
+// Prisma owns the table/column diff. It does NOT own the constraints.
+// Every rule that spans rows lives in a hand-written migration under
+// prisma/migrations/. See .claude/skills/backend/spellzee-invariants.
+//
+// Things deliberately absent from this file because Prisma cannot express them —
+// look for them in the SQL, not here:
+//   - partial unique indexes (WHERE ...)
+//   - expression indexes (normalize_phone(raw_value))
+//   - EXCLUDE USING gist
+//   - CHECK constraints
+//   - triggers (ID assignment, immutability, append-only, merge rules)
+//
+// Slice 1: Identity & Master Data with duplicate control.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Governance substrate — the actor and audit anchors every write path needs.
+// Full RBAC (permission matrix, relationship-based authz) is the governance
+// slice; this is the minimum that makes actor FKs real instead of dangling.
+// ---------------------------------------------------------------------------
+
+/// PLACEHOLDER for authentication only — see CLAUDE.md "How auth is unblocked".
+/// Authorization is ours and gets built out in the governance slice; this table
+/// exists so that "who did this" is a real foreign key from day one.
+model StaffUser {
+  id        String   @id @default(uuid()) @db.Uuid
+  staffCode String   @unique @map("staff_code")
+  fullName  String   @map("full_name")
+  email     String   @unique
+  /// One of the four roles settled 2026-09-09 (docs/open-decisions.md #5).
+  /// Enforced by CHECK staff_users_role_known, not by a Postgres enum type.
+  role      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  personsCreated     Person[]           @relation("PersonCreatedBy")
+  personsMerged      Person[]           @relation("PersonMergedBy")
+  contactsRecorded   ContactPoint[]
+  guardianLinks      StudentGuardian[]
+  approvalsRequested ApprovalRequest[]
+  approvalsDecided   ApprovalDecision[]
+  auditEntries       AuditLogEntry[]
+  policyVersions     PolicyVersion[]
+
+  @@map("staff_users")
+}
+
+/// Append-only. Enforced by trigger audit_log_append_only, not by convention.
+model AuditLogEntry {
+  id         String   @id @default(uuid()) @db.Uuid
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  actorId    String   @map("actor_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String   @map("entity_id") @db.Uuid
+  /// §22.5 requires old and new values here. This is the deliberate exception to
+  /// "log identifiers, never values" — which is why reading this table is a
+  /// permissioned action and audit rows never reach application logs.
+  oldValue   Json?    @map("old_value")
+  newValue   Json?    @map("new_value")
+  reason     String?
+  requestId  String?  @map("request_id")
+
+  actor StaffUser @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([entityType, entityId, occurredAt(sort: Desc)], map: "audit_log_entity_idx")
+  @@map("audit_log")
+}
+
+/// Append-only. A request is never edited; the decision is a separate row.
+model ApprovalRequest {
+  id          String   @id @default(uuid()) @db.Uuid
+  actionType  String   @map("action_type")
+  subjectType String   @map("subject_type")
+  subjectId   String   @map("subject_id") @db.Uuid
+  /// The other side of a two-party action — for person_merge, the survivor.
+  targetId    String?  @map("target_id") @db.Uuid
+  payload     Json?
+  reason      String
+  requestedBy String   @map("requested_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  requester StaffUser         @relation(fields: [requestedBy], references: [id], onDelete: Restrict)
+  decision  ApprovalDecision?
+  merge     Person?
+
+  @@index([actionType, subjectId], map: "approval_requests_subject_idx")
+  @@map("approval_requests")
+}
+
+/// Append-only, and at most one per request — approval is single-level
+/// (docs/open-decisions.md #5): one qualified approver's decision is final.
+model ApprovalDecision {
+  id                String   @id @default(uuid()) @db.Uuid
+  approvalRequestId String   @unique @map("approval_request_id") @db.Uuid
+  decision          String
+  decidedBy         String   @map("decided_by") @db.Uuid
+  reason            String
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  request  ApprovalRequest @relation(fields: [approvalRequestId], references: [id], onDelete: Restrict)
+  approver StaffUser       @relation(fields: [decidedBy], references: [id], onDelete: Restrict)
+
+  @@map("approval_decisions")
+}
+
+/// Effective-dated policy. Never edited in place: a change closes the current
+/// row (effective_to = now()) and inserts a new one, in one transaction.
+model PolicyVersion {
+  id            String    @id @default(uuid()) @db.Uuid
+  policyKey     String    @map("policy_key")
+  value         Json
+  effectiveFrom DateTime  @map("effective_from") @db.Timestamptz(6)
+  effectiveTo   DateTime? @map("effective_to") @db.Timestamptz(6)
+  createdBy     String    @map("created_by") @db.Uuid
+  /// Placeholder rows say so here, in words a person will recognise.
+  reason        String
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  creator StaffUser @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+
+  @@index([policyKey, effectiveFrom], map: "policy_versions_key_idx")
+  @@map("policy_versions")
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+/// Gapless per-prefix, per-year counter behind STU-2026-000184.
+/// Read and advanced only by next_spellzee_id(); never by application code.
+model IdentitySequence {
+  prefix    String
+  year      Int
+  nextValue BigInt   @map("next_value")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([prefix, year])
+  @@map("identity_sequences")
+}
+
+/// The permanent identity anchor for every human in the system.
+///
+/// Supertype of Student and Parent deliberately: §6.4 requires duplicate
+/// matching *across* student and parent names, phones, alternate numbers and
+/// emails. One person table means one contact table, one match index and one
+/// merge mechanism, all with real foreign keys — the alternative is a
+/// polymorphic contact_points.owner_id with no referential integrity at all.
+model Person {
+  id         String   @id @default(uuid()) @db.Uuid
+  /// STU-2026-000184 / PAR-2026-000007. Assigned by trigger on INSERT and
+  /// immutable thereafter (§6.1: "the ID never changes").
+  /// Application code must NOT supply this.
+  spellzeeId String   @unique @default("") @map("spellzee_id")
+  personType String   @map("person_type")
+  fullName   String   @map("full_name")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdBy  String   @map("created_by") @db.Uuid
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // --- merge tombstone -----------------------------------------------------
+  // A retired identity keeps its row and its Spellzee ID forever, so every
+  // historical reference (audit rows, tickets, sessions) still resolves. It
+  // redirects to the survivor. All five fields are set together or not at all.
+  retiredAt              DateTime? @map("retired_at") @db.Timestamptz(6)
+  mergedIntoPersonId     String?   @map("merged_into_person_id") @db.Uuid
+  mergedBy               String?   @map("merged_by") @db.Uuid
+  mergeReason            String?   @map("merge_reason")
+  mergeApprovalRequestId String?   @unique @map("merge_approval_request_id") @db.Uuid
+
+  creator       StaffUser        @relation("PersonCreatedBy", fields: [createdBy], references: [id], onDelete: Restrict)
+  merger        StaffUser?       @relation("PersonMergedBy", fields: [mergedBy], references: [id], onDelete: Restrict)
+  mergedInto    Person?          @relation("PersonMerge", fields: [mergedIntoPersonId], references: [id], onDelete: Restrict)
+  mergedFrom    Person[]         @relation("PersonMerge")
+  mergeApproval ApprovalRequest? @relation(fields: [mergeApprovalRequestId], references: [id], onDelete: Restrict)
+  contactPoints ContactPoint[]
+  student       Student?
+  parent        Parent?
+
+  @@unique([id, personType], map: "persons_id_type_key")
+  @@index([mergedIntoPersonId], map: "persons_merged_into_idx")
+  @@map("persons")
+}
+
+/// Student subtype. Downstream modules (enrollment, session participation)
+/// point here, not at persons — so an enrollment can never name a parent.
+model Student {
+  personId    String    @id @map("person_id") @db.Uuid
+  /// Constant 'student'. Exists only so the composite FK below can pin the
+  /// subtype; CHECK students_person_type_fixed holds it.
+  personType  String    @default("student") @map("person_type")
+  dateOfBirth DateTime? @map("date_of_birth") @db.Date
+  gender      String?
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  person    Person            @relation(fields: [personId, personType], references: [id, personType], onDelete: Restrict)
+  guardians StudentGuardian[]
+
+  @@unique([personId, personType], map: "students_person_id_type_key")
+  @@map("students")
+}
+
+/// Parent/guardian subtype.
+model Parent {
+  personId   String   @id @map("person_id") @db.Uuid
+  personType String   @default("parent") @map("person_type")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  person   Person            @relation(fields: [personId, personType], references: [id, personType], onDelete: Restrict)
+  children StudentGuardian[]
+
+  @@unique([personId, personType], map: "parents_person_id_type_key")
+  @@map("parents")
+}
+
+/// Many-to-many with history: a student may have several guardians and a
+/// guardian several children. Links are ended, never deleted.
+model StudentGuardian {
+  id              String    @id @default(uuid()) @db.Uuid
+  studentPersonId String    @map("student_person_id") @db.Uuid
+  parentPersonId  String    @map("parent_person_id") @db.Uuid
+  relationship    String
+  isPrimary       Boolean   @default(false) @map("is_primary")
+  startedAt       DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  endedAt         DateTime? @map("ended_at") @db.Timestamptz(6)
+  recordedBy      String    @map("recorded_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  student  Student   @relation(fields: [studentPersonId], references: [personId], onDelete: Restrict)
+  parent   Parent    @relation(fields: [parentPersonId], references: [personId], onDelete: Restrict)
+  recorder StaffUser @relation(fields: [recordedBy], references: [id], onDelete: Restrict)
+
+  @@index([parentPersonId], map: "student_guardians_parent_idx")
+  @@map("student_guardians")
+}
+
+/// §6.4: "Store historical contact details rather than creating identities for
+/// every new contact detail." A retired number is closed (valid_to), never
+/// deleted and never overwritten. An alternate number is simply another row.
+model ContactPoint {
+  id          String    @id @default(uuid()) @db.Uuid
+  personId    String    @map("person_id") @db.Uuid
+  contactType String    @map("contact_type")
+  /// As entered. The match key is the expression normalize_contact_value(...)
+  /// — there is no stored normalized column, so nothing can drift out of sync.
+  rawValue    String    @map("raw_value")
+  isPrimary   Boolean   @default(false) @map("is_primary")
+  validFrom   DateTime  @default(now()) @map("valid_from") @db.Timestamptz(6)
+  validTo     DateTime? @map("valid_to") @db.Timestamptz(6)
+  source      String?
+  recordedBy  String    @map("recorded_by") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  person   Person    @relation(fields: [personId], references: [id], onDelete: Restrict)
+  recorder StaffUser @relation(fields: [recordedBy], references: [id], onDelete: Restrict)
+
+  @@index([personId], map: "contact_points_person_idx")
+  @@map("contact_points")
+}

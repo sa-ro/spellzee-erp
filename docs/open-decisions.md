@@ -17,7 +17,7 @@ Most decisions that *feel* blocking are value-blocking. Fifteen of twenty-one ar
 
 ## Blockers — answer before schema work
 
-### 1. Capacity calculation unit — hours, minutes, sessions or weighted slots (§30.10)
+### 1. ~~Capacity calculation unit — hours, minutes, sessions or weighted slots (§30.10)~~ — **ANSWERED 2026-09-09**
 
 **Blocks:** every capacity and availability table.
 
@@ -34,9 +34,15 @@ and §13.2, which requires forecast capacity modelled separately with an expecte
 
 Cannot hide behind a policy row — the row would have to describe its own column type.
 
-**Ask alongside:** the session-length model (below). Any hours-based answer depends on it.
+**Answer: sessions.** Matches §13.3's worked example directly — capacity is an integer count of
+sessions a teacher/slot can deliver, no duration arithmetic. This is a shape decision recorded here,
+not a `capacity.unit` policy row (see the correction below: a policy row's shape is fixed, this one
+determines the shape of other tables).
 
-### 2. Fields requiring approval to edit (§30.8)
+**Still open:** the session-length model (item D below) is a separate question — this answer does
+not resolve it, since capacity is now counted in sessions regardless of how long each one runs.
+
+### 2. ~~Fields requiring approval to edit (§30.8)~~ — **ANSWERED 2026-09-09**
 
 **Blocks:** the approval / maker–checker tables — which every Phase 1 write path traverses.
 
@@ -48,7 +54,14 @@ A per-field approval registry needs field identity, an old/new value pair, and a
 a pending change that has not landed yet. That is materially different from an action-level enum,
 and retrofitting it later rewrites the uniform write path.
 
-### 3. Duplicate **merge rules** (§30.9) — the merge half only
+**Answer: per-action command, not a per-field registry.** A sensitive field gets its own dedicated
+command (e.g. `UpdateStudentDateOfBirth`) that is always maker–checker gated; an ordinary field on
+the same entity uses a separate, ungated command. This matches the project's existing "one command
+per file" convention (`docs/folder-structure.md`) and avoids introducing a generic field-approval
+engine — the kind of "configurable rule builder" CLAUDE.md's fifth rule warns against. Each gated
+command still records old value, new value, who and why per §22.5, same as any override.
+
+### 3. ~~Duplicate **merge rules** (§30.9)~~ — the merge half only — **ANSWERED 2026-09-09**
 
 **Blocks:** duplicate-control and merge tables. The confidence *threshold* is value-blocking and
 takes a placeholder; the merge model does not.
@@ -62,7 +75,16 @@ takes a placeholder; the merge model does not.
 
 §6.1 insists the Spellzee ID *"never changes"*, so a merge cannot simply repoint.
 
-### 4. Teacher versus student technical failure rules (§30.3)
+**Answer, part one: high-confidence duplicates are blocked outright.** No pending/approval state —
+creation is refused at the confidence threshold. No maker–checker request row needed for this path.
+
+**Answer, part two: the older Spellzee ID always survives a merge.** The identity created first
+wins — deterministic, no judgment call. The newer/duplicate ID is retired but stays resolvable,
+redirecting to the survivor, so historical references (audit rows, old tickets, old session
+records) never break. This satisfies §6.1's "never changes" for the surviving ID and preserves
+original audit references for the retired one, per §6.4.
+
+### 4. ~~Teacher versus student technical failure rules (§30.3)~~ — **ANSWERED 2026-09-09**
 
 **Blocks:** the ledger `entry_type` vocabulary and the compensation trigger.
 
@@ -75,7 +97,23 @@ Three ambiguities in one sentence: *generally* admits exceptions; *may follow a 
 does not say whether that policy protects, consumes or something else; and **verified** implies a
 verification step with an actor and an outcome that the baseline never defines.
 
-### 5. Approval hierarchy — the role set (§30.7)
+**Answer: student-side technical failure consumes entitlement**, same as a plain absence — no
+verification workflow, no separate protected-outcome path. This keeps the two `entry_type`s
+asymmetric exactly where the baseline implies they should be:
+
+| Fault | Entitlement | Compensation |
+|---|---|---|
+| Teacher / Spellzee-side failure | Protected | Triggered |
+| Student-side technical failure | **Consumed** | None |
+
+This resolves the "may follow a separate policy" ambiguity as "no separate policy" — student-side
+technical failure is not a new ledger entry type, it reuses the ordinary absence/consumption path.
+It also sidesteps the undefined **verified** step: since student-side failure no longer needs to
+protect entitlement, there is nothing for a verification actor to gate. Teacher/Spellzee-side
+failure keeps needing a coordinator to record it as such (that determination itself is not this
+decision), but no new approval workflow was introduced here.
+
+### 5. ~~Approval hierarchy — the role set (§30.7)~~ — **ANSWERED 2026-09-09**
 
 **Blocks:** the RBAC role tables. The *financial thresholds* half is Phase 4 and value-blocking —
 split the item when asking.
@@ -87,7 +125,13 @@ those four are the real roles, and whether approval is single-level or hierarchi
 Note: §22.4's table is garbled in extraction (lines ~613–628) — the actor columns are legible, the
 cells are not. Read it in the PDF.
 
-### 6. Teacher / HR minimum for Phase 1 (§30.20)
+**Answer: adopt §22.4's four roles as-is for Phase 1** — Staff/Coordinator, Team Lead/Manager,
+Finance, Restricted Admin — and **approval is single-level**: one qualified approver's decision is
+final, no escalation chain. This matches the "dozens of staff" scale from CLAUDE.md's north star;
+revisit if the org genuinely outgrows a flat approval structure. The financial-thresholds half of
+§30.7 remains open and Phase-4/value-blocking, unaffected by this answer.
+
+### 6. ~~Teacher / HR minimum for Phase 1 (§30.20)~~ — **ANSWERED 2026-09-09**
 
 **Blocks:** the teacher table's certification fields.
 
@@ -98,6 +142,14 @@ allocation **is** Phase 1. Our own invariants registry already encodes this as
 
 So a certification status field must exist in Phase 1 even though the certification *workflow* is
 Phase 3. Open: the minimum teacher attributes Phase 1 needs.
+
+**Answer: identity + status + subjects/languages.** Name, contact, the employee link,
+`certification_status` (an enum — e.g. pending / certified / suspended — set manually by HR staff
+for now, no workflow behind it until Phase 3), subjects taught, and languages. This is enough for
+`allocation_requires_certified_teacher` to check eligibility and for coordinators to match a teacher
+to a student on subject/language. Availability, leave and performance fields are explicitly **not**
+included here — they stay out of Phase 1's teacher table until their own Phase 3 work needs them, to
+avoid building ahead of scope.
 
 ---
 

@@ -180,6 +180,60 @@ change between environments, and cannot be asserted on in a test.
 
 ---
 
+## 7. Blocking a duplicate when there is no parent row to lock
+
+The entitlement overdraw case locks the subscription row. Duplicate control
+cannot: the row it must not race against **does not exist yet**. Two
+transactions each creating "Aarav Kumar / 9876543210" have nothing in common
+to `SELECT ... FOR UPDATE`.
+
+A transaction-scoped advisory lock keyed on the match bucket is the answer —
+it serializes exactly the contended set and nothing else:
+
+```sql
+PERFORM pg_advisory_xact_lock(
+  hashtext('spellzee.person_match:' || p_person_type || '|' || p_normalized_name));
+```
+
+Then the lookup, then the `RAISE`. Held to end of transaction, released by
+commit or rollback with no cleanup path to forget.
+
+**Test it with two connections.** `prisma/tests/concurrency.spec.ts` asserts
+that the second transaction *blocks* while the first is open, and *then*
+fails — a test that only checks the eventual error would pass even with the
+lock removed.
+
+---
+
+## 8. Deriving rather than storing, without a stored column
+
+Where a value is derived (a normalized phone number, a normalized name), do
+not add a column that can drift. Put the derivation in an **IMMUTABLE
+function** and build an **expression index** on it:
+
+```sql
+CREATE UNIQUE INDEX no_duplicate_active_contact_value
+  ON contact_points (person_id, contact_type,
+                     normalize_contact_value(contact_type, raw_value))
+  WHERE valid_to IS NULL;
+```
+
+Two further reasons this beats a generated column here: Prisma cannot express
+a generated column at all, so one would show up as drift on every future
+`migrate diff`; and there is nothing to backfill or keep in sync.
+
+Two rules that come with it:
+
+- **Schema-qualify every call inside a function body and an index expression**
+  (`public.normalize_phone(...)`). `CREATE INDEX` runs with a restricted
+  `search_path`, and an unqualified call fails at migration time with
+  `function normalize_phone(text) does not exist` — verified, not assumed.
+- **Changing the body of an IMMUTABLE function silently corrupts every index
+  built on it.** Such a change must `REINDEX` the dependents in the same
+  migration.
+
+---
+
 ## Registry
 
 Keep this list current as invariants are added.
@@ -192,5 +246,41 @@ Keep this list current as invariants are added.
 | `ledger_cannot_overdraw` | `session_ledger` | trigger | Entitlement never goes negative |
 | `allocation_requires_certified_teacher` | `class_schedules` | trigger | Uncertified teachers cannot be allocated |
 
-*(Populate as built — this table is the audit surface for whether the
-strategy is still intact.)*
+### Built — slice 1, identity & duplicate control (2026-09-09)
+
+Migration `20260909073749_identity_master_data_and_duplicate_control`.
+Tests: `prisma/tests/*.spec.ts` (58 assertions, all against `spellzee_test`).
+
+| Constraint | Table | Mechanism | Rule |
+|---|---|---|---|
+| `persons_spellzee_id_key` | `persons` | unique | A Spellzee ID is never reused |
+| `persons_spellzee_id_format` | `persons` | check | It is `STU-YYYY-NNNNNN` / `PAR-YYYY-NNNNNN` |
+| `persons_spellzee_id_prefix_matches_type` | `persons` | check | The prefix agrees with the person type |
+| `persons_assign_spellzee_id` | `persons` | trigger (BEFORE INSERT) | The database assigns the ID; application code may not supply one |
+| `persons_identity_immutable` | `persons` | trigger (BEFORE UPDATE) | ID, type, key and created_at never change; a merge is never reversed by an edit |
+| `persons_merge_fields_all_or_none` | `persons` | check | A merge sets all five tombstone fields or none |
+| `persons_merge_not_self` | `persons` | check | An identity is not merged into itself (backstop; the trigger raises `merge_not_self` first) |
+| `persons_merge_valid` | `persons` | trigger (BEFORE INSERT/UPDATE) | The older ID survives; types match; the survivor is live; an approved `person_merge` request names exactly this pair. Locks the survivor `FOR UPDATE` |
+| `persons_merge_redirects_live` | `persons` | **deferred** constraint trigger | A redirect always points at a live identity — resolving a retired ID is always one hop |
+| `students_person_type_fixed` / `parents_person_type_fixed` + composite FK | `students`, `parents` | check + FK | A student row can only point at a student identity |
+| `one_primary_guardian_per_student` | `student_guardians` | partial unique | At most one current primary guardian |
+| `one_active_link_per_student_guardian_pair` | `student_guardians` | partial unique | No duplicate live guardian link |
+| `student_guardians_persons_live` | `student_guardians` | trigger | No new link against a retired identity |
+| `one_primary_contact_per_person_per_type` | `contact_points` | partial unique | At most one current primary phone and one current primary email |
+| `no_duplicate_active_contact_value` | `contact_points` | partial unique on an expression | The same live number is not recorded twice, however it is typed |
+| `contact_points_value_normalizes` | `contact_points` | check | A phone normalizes to 8–15 digits; an email looks like one |
+| `contact_points_period_valid` | `contact_points` | check | A validity window does not end before it starts |
+| `contact_points_person_live` | `contact_points` | trigger | No new contact detail against a retired identity |
+| `contact_points_block_duplicate` | `contact_points` | trigger + **advisory lock** | Same type + same normalized name + same live contact value ⇒ blocked outright |
+| `persons_rename_not_duplicate` | `persons` | trigger | A rename cannot create that duplicate either |
+| `audit_log_append_only` | `audit_log` | trigger (STATEMENT) | No UPDATE, no DELETE — not even a zero-row one |
+| `approval_requests_append_only` | `approval_requests` | trigger (STATEMENT) | Same |
+| `approval_decisions_append_only` | `approval_decisions` | trigger (STATEMENT) | Same |
+| `approval_decisions_approval_request_id_key` | `approval_decisions` | unique | Approval is single-level: one decision per request is final |
+| `approval_decisions_maker_checker` | `approval_decisions` | trigger | The requester never approves their own request |
+| `person_merge_request_needs_target` | `approval_requests` | check | A merge request names a survivor |
+| `policy_no_overlap` | `policy_versions` | EXCLUDE gist | Exactly one version of a policy in force at any instant |
+| `policy_versions_supersede_only` | `policy_versions` | trigger | The only permitted UPDATE is closing an open version; DELETE never |
+| `staff_users_role_known` | `staff_users` | check | One of the four roles settled 2026-09-09 |
+
+*(This table is the audit surface for whether the strategy is still intact.)*

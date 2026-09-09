@@ -224,10 +224,25 @@ export default tseslint.config(
   // Tests may reach for Prisma and for raw dayjs — a constraint test asserts
   // the database rejects a violation, which means talking to it directly.
   {
-    files: ['**/*.{spec,test,e2e-spec}.{ts,tsx}', 'apps/api/test/**/*.ts'],
+    files: ['**/*.{spec,test,e2e-spec}.{ts,tsx}', 'apps/api/test/**/*.ts', 'prisma/tests/**/*.ts'],
     rules: {
       'no-restricted-imports': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+
+  // prisma/ holds the seed script and the constraint suite. Both run in Node,
+  // outside any app's tsconfig, so they need Node's globals declared and are
+  // deliberately outside the type-aware block above.
+  {
+    files: ['prisma/**/*.{ts,mjs,js}', 'vitest.config.ts'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+      },
     },
   },
 );

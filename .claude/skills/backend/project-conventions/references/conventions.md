@@ -1,6 +1,11 @@
 # Project Conventions — Template (fill in once real code exists)
 
-_Last updated: 2026-09-09 — local environment section populated; the rest still awaits real code._
+_Last updated: 2026-09-09 — local environment, database conventions and the trigger inventory are
+now observed fact (schema slice 1). Application-code sections still await real code._
+
+`pg_trgm` is installed in both databases alongside `btree_gist`. Both are **trusted** extensions in
+PostgreSQL 17, so the non-superuser `spellzee` role can `CREATE EXTENSION` them — verified, so a
+migration may carry `CREATE EXTENSION IF NOT EXISTS` itself rather than needing a DBA step.
 
 ## Local environment (observed, verified)
 
@@ -47,10 +52,69 @@ src/
 
 ## Naming conventions
 
-- File naming: _TBD_
-- Variable/function casing: _TBD_
-- DB table naming (singular/plural, snake_case): _TBD_
-- DB column naming: _TBD_
+- File naming: _TBD (application code)_
+- Variable/function casing: _TBD (application code)_
+- **DB table naming: plural, `snake_case`** — `persons`, `contact_points`, `approval_requests`.
+- **DB column naming: `snake_case`**, mapped from Prisma's camelCase with `@map` / `@@map`.
+- **Constraints and indexes are named explicitly, and the name reads as the rule**:
+  `one_primary_guardian_per_student`, `merge_older_id_must_survive`. An auto-generated
+  `persons_check1` is unreadable in a production log and cannot be asserted on.
+- **Trigger error messages start with a stable, greppable token** — `duplicate_person_blocked:`,
+  `maker_checker_violation:`, `append_only_violation:` — because a trigger raises a message, not a
+  constraint name, and the tests and the error mapper both match on it.
+
+## Database conventions (observed, slice 1)
+
+- **Timestamps are `TIMESTAMPTZ(6)`.** Dates with no time (`date_of_birth`) are `DATE`.
+- **Primary keys are `UUID`** with `gen_random_uuid()` (built in since PG13 — no `pgcrypto`).
+- **`ON DELETE RESTRICT` everywhere. Never `CASCADE`** — this project does not delete historical
+  records. Prisma emits `ON UPDATE CASCADE`, which is inert here because primary keys are immutable.
+- **Enumerated values are `TEXT` + a named `CHECK`, not a Postgres `ENUM` type.** A `CHECK` can be
+  narrowed or widened by an ordinary migration and shows the whole allowed set in the error;
+  `ALTER TYPE` cannot remove a value at all. The vocabulary itself belongs in
+  `packages/contracts/shared`.
+- **Derived values are IMMUTABLE functions plus expression indexes, never stored columns.** See the
+  `normalize_*` family. Two rules follow: schema-qualify every call inside a function body or index
+  expression (`public.normalize_phone(...)`) because `CREATE INDEX` runs with a restricted
+  `search_path`; and changing such a function's body must `REINDEX` its dependants in the same
+  migration.
+- **Applying a hand-edited migration uses `prisma migrate deploy`, not `prisma migrate dev`** — the
+  guard hook blocks the latter (correctly) even for the apply step. Generate with
+  `prisma migrate dev --create-only`, hand-write the SQL, apply with `deploy`.
+
+### Triggers — invisible in `schema.prisma`, so inventoried here
+
+If a schema is ever rebuilt from `schema.prisma` alone, every one of these is lost. They live only
+in `prisma/migrations/`.
+
+| Trigger | Table | Fires | Purpose |
+|---|---|---|---|
+| `persons_assign_spellzee_id` | `persons` | BEFORE INSERT | Mints `STU-2026-000184`; refuses an ID supplied by application code |
+| `persons_identity_immutable` | `persons` | BEFORE UPDATE | ID / type / key / created_at never change; a merge is never reversed by an edit |
+| `persons_merge_valid` | `persons` | BEFORE INSERT/UPDATE | Older ID survives, types match, survivor live, approved request names this pair. Locks the survivor `FOR UPDATE` |
+| `persons_merge_redirects_live` | `persons` | **DEFERRED** constraint trigger | A redirect always points at a live identity |
+| `persons_rename_not_duplicate` | `persons` | BEFORE UPDATE OF full_name | A rename cannot create a blocked duplicate |
+| `contact_points_person_live` | `contact_points` | BEFORE INSERT | No new contact detail on a retired identity |
+| `contact_points_block_duplicate` | `contact_points` | BEFORE INSERT/UPDATE | The duplicate block; takes `pg_advisory_xact_lock` on the match bucket |
+| `student_guardians_persons_live` | `student_guardians` | BEFORE INSERT | No new guardian link on a retired identity |
+| `approval_decisions_maker_checker` | `approval_decisions` | BEFORE INSERT | The requester never approves their own request |
+| `audit_log_append_only` | `audit_log` | BEFORE UPDATE/DELETE, STATEMENT | Append-only |
+| `approval_requests_append_only` | `approval_requests` | BEFORE UPDATE/DELETE, STATEMENT | Append-only |
+| `approval_decisions_append_only` | `approval_decisions` | BEFORE UPDATE/DELETE, STATEMENT | Append-only |
+| `policy_versions_supersede_only` | `policy_versions` | BEFORE UPDATE/DELETE | Only closing an open version is allowed; never DELETE |
+
+## Tests
+
+Constraint tests live in **`prisma/tests/*.spec.ts`**, beside the migrations they prove, and run
+with **Vitest** (`npm test`) against the real `spellzee_test` database using `pg` directly — the
+assertion is about PostgreSQL's error, its SQLSTATE and its constraint name, which an ORM hides.
+
+- `prisma/tests/helpers.ts` provides `withRollback` (a transaction that is always rolled back) and
+  `expectRejectionAt` (a SAVEPOINT, so one test can assert more than one violation — a failed
+  statement otherwise aborts the whole transaction).
+- **Concurrency tests truncate instead**, because two connections cannot see each other's
+  uncommitted rows. `vitest.config.ts` sets `fileParallelism: false` so a truncate never lands in
+  the middle of another file's fixtures.
 
 ## Error handling pattern
 
@@ -100,7 +164,7 @@ preference — see `/tradeoff-library.md`.
 | Dates | **Day.js** + `utc` and `timezone` plugins | **Only `common/time` imports it** — see below |
 | Validation | _TBD_ (zod expected) | |
 | Logging | _TBD_ (pino expected) | |
-| Testing | _TBD_ (Vitest expected) | Real Postgres, no Testcontainers — see Local environment |
+| Testing | **Vitest** + node-postgres (`pg`) | Real Postgres, no Testcontainers. Constraint tests in `prisma/tests/` |
 
 ### Frontend
 
