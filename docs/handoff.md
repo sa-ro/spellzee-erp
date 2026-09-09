@@ -3,10 +3,22 @@
 For picking this up on another machine, or in a fresh session. Read this first, then
 `CLAUDE.md`.
 
-**Where things stand:** the tooling is built, the environment works, and the repository is
-scaffolded and linted. There is **no application code yet** — the directory tree exists as empty
-`.gitkeep` folders, `package.json` carries lint tooling only, and there is no Prisma schema, no
-NestJS app and no Next.js app. The next step is the first schema, and it is now unblocked.
+**Where things stand:** the environment is recreated and verified (PostgreSQL 17.11 on 5433, both
+databases, `btree_gist`, `.env`), all six Phase-1 shape-blocking decisions are resolved, and the
+**first schema has landed** — commit `cb34f4e`, "identity & master data, with duplicate control".
+12 tables in `spellzee_dev`/`spellzee_test`: `persons`/`students`/`parents`, contact history,
+duplicate-block invariants, merge with maker-checker approval and redirect chains, and the
+governance tables (`audit_log`, `approval_requests`, `approval_decisions`, `policy_versions`,
+`staff_users`). 58/58 constraint and concurrency tests pass against real Postgres; no schema drift.
+
+There is still **no NestJS app and no Next.js app** — only the Prisma schema, migrations, tests and
+seed exist under `prisma/`. The next step is `write-path-builder` (NestJS commands/endpoints on top
+of this schema) or `/api-feature` for whatever module the team prioritizes next — see "What's next"
+below.
+
+A one-page PDF of the 14 remaining value-blocking policy numbers and 4 process questions
+(`phase0-decisions.pdf`, not checked in) was generated and sent to the business/ops team for
+answers; nothing is blocked while waiting.
 
 ---
 
@@ -326,16 +338,21 @@ filesystem MCPs are unwatched paths around every guard.
    approval-field modeling (per-action command), duplicate merge rules (block outright / older ID
    survives), student-side technical failure (consumes), approval role set (§22.4's four, single
    level), teacher/HR Phase 1 minimum (identity + status + subjects/languages). See above.
-3. **Run `/api-feature`** for the first slice — identity and duplicate control is the natural start,
-   since it has the fewest blocked dependencies and both duplicate-control decisions (#3) are now
-   settled. Phase 1 of that chain will re-check the open decisions; Phase 3 is the schema gate and
-   will stop for approval.
-4. **Fill `docs/design/`** once the Figma MCP is connected. The token format is settled (CSS custom
+3. ~~**Run schema-architect for the first slice**~~ — **DONE 2026-09-09.** Identity & master data
+   with duplicate control landed as commit `cb34f4e`. See above.
+4. **Deliberately paused: do not pick the next module to build without the team's input.** The
+   business/ops team has `phase0-decisions.pdf` (14 policy numbers, 4 process questions). Once real
+   answers come back — and once whoever owns product priority says what to build next (admission
+   handover? allocation? scheduling? tickets?) — run `/api-feature <that thing>` for the write-path
+   (NestJS commands/endpoints) on top of the identity schema, or for whichever module's schema comes
+   next. Do not guess the priority from the roadmap order in `CLAUDE.md` — that lists Phase 1 scope,
+   not build sequence.
+5. **Fill `docs/design/`** once the Figma MCP is connected. The token format is settled (CSS custom
    properties), so the Figma values drop straight in.
 
-Runtime dependencies are deliberately absent from `package.json`. NestJS, Prisma and Next.js get
-installed when the first schema and the first module land — not before, because their versions and
-adjacent choices interact with decisions still open.
+Prisma, `@prisma/client`, `vitest` and `pg` are now installed (see `package.json`) — added by the
+identity schema work. NestJS and Next.js remain uninstalled until the first write-path module and
+the first screen land respectively.
 
 ---
 
