@@ -1,7 +1,9 @@
 # Spellzee ERP
 
 Operations & delivery platform for Spellzee (online tutoring), architected as the foundation of a
-broader ERP. Currently **pre-code**: this repo holds the business baseline
+broader ERP. The **database layer is real** — the identity schema, its hand-written invariant
+migration and its constraint tests have landed; the **application layer is still empty** stubs.
+This repo also holds the business baseline
 ([Spellzee_ERP_Master_Product_Business_Requirements_Draft_3.pdf](Spellzee_ERP_Master_Product_Business_Requirements_Draft_3.pdf))
 and the architecture decisions ([tradeoff-library.md](tradeoff-library.md)). Those two documents are
 the source of truth; this file is the working summary for building against them.
@@ -84,7 +86,7 @@ decision, not an implementation detail.
 
 ## Skills, and what overrides what
 
-`.claude/skills/` holds a general engineering skill library — `backend/` (17 skills: architecture,
+`.claude/skills/` holds a general engineering skill library — `backend/` (23 skills: architecture,
 API design, database, distributed systems, security, reliability, performance, testing, plus
 `workflow-*` step-by-step procedures) and `frontend/` (28 skills for the Next.js console and, later,
 the parent portal). Use them: they carry real depth this file does not repeat, and their
@@ -121,54 +123,36 @@ that encode the five rules operationally; reach for them before the generic equi
 
 ## Enforced mechanically
 
-`.claude/hooks/guard-invariants.js` runs on every Bash, Write and Edit. It does not read the
-skills — it just checks, so the guard holds whether or not the relevant skill was loaded:
+`.claude/hooks/guard-invariants.js` runs on every Bash, PowerShell, Write and Edit. It does not
+read the skills — it just checks, so the guard holds whether or not the relevant skill was
+loaded. **The hook file is the authoritative list of what it blocks and what it asks about**;
+do not maintain a second copy of that list here, because the two drift and the prose loses.
 
-| Trigger | Result |
-|---|---|
-| `prisma migrate dev` without `--create-only` | **blocked** — the SQL must stay hand-editable |
-| A Merithub `delete` / `destroy` / `remove` call | **blocked** — decision 7; irreversible upstream |
-| `prisma db push` / `migrate reset` | asks — both skip or destroy hand-written constraints |
-| `sessions_remaining` and similar balance columns | asks — decision 3, reversal trigger "never" |
-| `DROP CONSTRAINT` / `DROP INDEX` / `DROP TRIGGER` in a migration | asks — invariants live in the database |
-| `UPDATE` / `DELETE` on a ledger table | asks — corrections are new rows |
-| `UPDATE` / `DELETE` on `audit_log`, `policy_versions`, `approval_requests` | asks — an editable audit trail evidences nothing |
-| `await` on Merithub/FreeJump/WhatsApp in a controller, resolver or service | asks — belongs in a worker |
-
-Exemptions that keep it quiet: Markdown and `.claude/` files (so the skills can quote these
-patterns), test files (so a test may assert we never call upstream delete), and worker, adapter,
-client, job and infrastructure paths (where third-party calls belong). The hook fails open — if it
-errors it allows the call rather than blocking work.
-
-An "ask" is a prompt, not a refusal. A legitimate case — narrowing a constraint, a throwaway local
-database, a file whose path the check misread — is approved and proceeds.
+Two things it blocks outright (`prisma migrate dev` without `--create-only`, and any Merithub
+delete), six it prompts on. An "ask" is a prompt, not a refusal — a legitimate case is approved
+and proceeds. It fails open: an error in the hook allows the call rather than blocking work.
 
 What it does **not** catch: an invariant written into service logic, a reconciliation job, a
 hard-coded threshold in application code, a missing audit write. Those are semantic, not textual —
 `erosion-auditor` and `workflow-pre-merge-review` cover them. Three layers, not one: the hook always
 runs, the skills guide, the auditor reasons.
 
+After a change is written, `scripts/verify.sh` is the check — typecheck, lint, format, Prisma
+validate, migration drift, tests. It is wired to the `Stop` hook, and reports a step whose
+prerequisites are absent as SKIPPED rather than passing it silently. `npm run verify --full`
+turns every skip into a failure; use it before a commit.
+
 ### MCP servers — the hook's blind spot
 
-**The hook sees Bash, Write and Edit. It does not see MCP tool calls.** An MCP server that can
-reach the database or the filesystem is a path around every guard in this file:
+**The hook sees Bash, PowerShell, Write and Edit. It does not see MCP tool calls.** An MCP server
+that can reach the database or the filesystem is a path around every guard in this file, so adding
+one is a decision about the enforcement surface, not a neutral convenience.
 
-```
-Bash / Write / Edit   →  hook checks     ✓
-MCP tool call         →  hook is blind   ✗
-```
-
-So an MCP server is not a neutral convenience here. Adding one is a decision about the enforcement
-surface, and it goes in two buckets:
-
-| Safe — reads things that are not the codebase | Unwatched path — adds a way around the guards |
-|---|---|
-| **Figma** — design tokens. Needed to fill `docs/design/` | **Postgres** — `DROP CONSTRAINT` via MCP is invisible to the hook |
-| **GitHub** — issues, PRs, CI status | **Prisma** — makes bypassing `--create-only` easy, and the whole invariant strategy rests on it |
-| | **Filesystem** — duplicates Write/Edit while skipping their checks |
-
-None are configured today. When they are, prefer the left column, and treat anything in the right
-column as needing a reason beyond convenience.
+Safe, because they read things that are not the codebase: **Figma** (design tokens), **GitHub**
+(issues, PRs, CI). Unwatched paths, because they duplicate a guarded capability while skipping the
+guard: **Postgres** (`DROP CONSTRAINT` becomes invisible), **Prisma** (makes bypassing
+`--create-only` easy, and the whole invariant strategy rests on it), **Filesystem** (duplicates
+Write/Edit). None are configured today.
 
 **On Postgres specifically:** `psql` through Bash already works, is watched by the hook, and is what
 verified this project's first exclusion constraint. Read-only credentials would stop a write, but
@@ -180,13 +164,13 @@ scale.** Keep the count low on purpose.
 
 ## Agents and risk classes
 
-`.claude/agents/` holds the build team, split by **erosion point** rather than by lifecycle stage or
-domain module — see `.claude/agents/README.md` for why, and for the Tier 2/3 agents that are
-designed but deliberately not yet built. Today: `scope-interrogator` (open decisions, read-only),
-`schema-architect` (schema and invariants), `write-path-builder` (NestJS commands and endpoints),
-`integration-builder` (outbox, workers, Merithub), and `erosion-auditor` (diff audit, read-only).
+`.claude/agents/` holds the build team, split by **erosion point** rather than by lifecycle stage
+or domain module. The roster, the rationale for that split, and the Tier 2/3 agents designed but
+not yet built are all in `.claude/agents/README.md`. The chains that drive them are the four files
+in `.claude/commands/` — `/api-feature` (backend, with the schema approval gate), `/ui-feature`
+(Next.js, no agents), `/build-fullstack` (both in order), `/fix-bug`.
 
-Changes fall into two risk classes, mirroring the maker–checker split the product itself enforces:
+Changes fall into two risk classes, mirroring the maker-checker split the product itself enforces:
 
 | Needs human approval before landing | Lands autonomously once gates pass |
 |---|---|
@@ -198,23 +182,14 @@ Changes fall into two risk classes, mirroring the maker–checker split the prod
 
 Ambiguous changes need approval, and the reason for that judgement should be stated.
 
-Three commands drive this:
-
-- **`/api-feature`** — the agent chain for backend work (schema, API, workers, integrations), with
-  the schema approval gate.
-- **`/ui-feature`** — the Next.js UI from the frontend skills, in the main session, no agents.
-- **`/build-fullstack`** — both in order: backend chain → Figma conversion → wiring the UI to the
-  real endpoints. Use it whenever a feature needs an API *and* a screen.
-
 The seam between backend and frontend is the **API contract**: the backend run owns the endpoint,
 its authorization, its pagination and the response types; the UI imports those types rather than
 re-declaring them. Backend runs first in the full-stack chain because that contract is what the UI
 wires to — and if the schema gate stops, the chain stops rather than building UI against a shape
 that may still change.
 
-Pixel-perfect UI work needs the **Figma MCP** connected (`get_design_context`, `get_screenshot`,
-`get_variable_defs`). Without it, design conversion is a structural approximation and must be
-labelled as one.
+Pixel-perfect UI work needs the **Figma MCP** connected. Without it, design conversion is a
+structural approximation and must be labelled as one.
 
 Every agent that writes runs `workflow-pre-merge-review` (including its Spellzee erosion check) plus
 the DoD of each skill it touched, before reporting done. Reporting completion over a failing gate is
@@ -222,28 +197,19 @@ worse than reporting the failure.
 
 ## Domain modules
 
-The monolith's module boundaries map one-to-one onto these. Invariants span them, which is exactly
-why they are not services.
+The monolith's module boundaries are the directories under `apps/api/src/modules/` — Identity,
+Sales, Student, Operations, Academic, Teacher/HR, Finance, Communication, Governance, Analytics.
+Each carries a README describing its scope. Invariants span them, which is exactly why they are
+not services.
 
 The concrete layout is in **[`docs/folder-structure.md`](docs/folder-structure.md)** — a monorepo
 (`apps/api`, `apps/web`, `packages/contracts`), with the backend split four ways: `modules/` for
 domain, `platform/` for the uniform write path, `integrations/` for the eventual-consistency edge,
 and `workers/` as a separate always-on deployable. One command per file. **Path names are
-load-bearing**: `guard-invariants.js` reads them to decide what to check, so a directory rename is
-a change to the guard.
+load-bearing**: `guard-invariants.js` and `eslint.config.js` both read them to decide what to
+check, so a directory rename is a change to the guard.
 
-- **Identity & Master Data** — parent, student, employee, teacher, course, subject.
-- **Sales & Admissions** — leads, demos, admission context (external systems remain during transition).
-- **Student & Customer** — Student 360, enrollments, lifecycle, history.
-- **Operations / Delivery** — handover, verification, coordinator ownership, allocation, scheduling,
-  sessions, compensation, tickets, SLA. *Phase 1 lives mostly here.*
-- **Academic** — curriculum, lessons, attendance, assessments, materials, progress, recordings.
-- **Teacher & HR** — recruitment, availability, training, certification, observation, performance,
-  leave, payroll.
-- **Finance** — subscriptions, payments, credits, refunds, incentives.
-- **Communication** — WhatsApp, in-app, calls, email, notifications (behind a channel adapter).
-- **Governance** — roles, permissions, approvals, segregation of duties, audit, duplicate control.
-- **Analytics**, then **AI & Automation** — a layer above reliable data, never a substitute for it.
+*Phase 1 lives mostly in Operations / Delivery.*
 
 ## Identity model
 
@@ -387,6 +353,9 @@ starting to exceed the feature work it supports.* (Decision 10 in `tradeoff-libr
   most likely to fail.
 - **Constraint tests are the highest-value tests here**: attempt the violation, assert the database
   rejects it. Write one for every invariant migration.
+- `npm run verify` runs everything at once. A step it cannot run (no database, a dependency not
+  installed) reports SKIPPED with the reason — read those lines rather than treating a pass as
+  proof. `npm run verify -- --full` makes a skip a failure.
 - **Workers must not scale to zero.** A queue consumer inside a scale-to-zero service stops draining
   silently. Run workers as a separate always-on service, min instances ≥ 1, and alert on outbox rows
   older than a threshold. This is the most common way an outbox pattern quietly dies.
