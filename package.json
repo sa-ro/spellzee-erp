@@ -5,6 +5,8 @@
   "type": "module",
   "workspaces": ["apps/*", "packages/*"],
   "scripts": {
+    "typecheck": "tsc -b",
+    "verify": "bash scripts/verify.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "biome format --write .",

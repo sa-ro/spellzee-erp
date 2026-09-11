@@ -1,5 +1,41 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(npm run format:check)",
+      "Bash(npm run check)",
+      "Bash(npm run test)",
+      "Bash(npm run verify)",
+      "Bash(npm ls:*)",
+      "Bash(npx --no-install tsc -b)",
+      "Bash(npx --no-install prisma validate)",
+      "Bash(npx --no-install prisma migrate diff:*)",
+      "Bash(npx --no-install prisma format)",
+      "Bash(bash scripts/verify.sh)",
+      "Bash(bash scripts/verify.sh --full)",
+      "Bash(npm run verify -- --full)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch --show-current)",
+      "Bash(git ls-files:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(rg:*)",
+      "Bash(sed -n:*)",
+      "Read(//**)",
+      "Glob(//**)",
+      "Grep(//**)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -10,6 +46,18 @@
             "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-invariants.js\"",
             "timeout": 10,
             "statusMessage": "Checking Spellzee invariants..."
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/verify.sh\"",
+            "timeout": 180,
+            "statusMessage": "Verifying (typecheck, lint, format, schema, tests)..."
           }
         ]
       }
