@@ -1,6 +1,6 @@
 ---
 name: workflow-new-endpoint
-description: Step-by-step workflow for adding a new API endpoint/route end-to-end — from contract design through implementation, validation, security, tests, and review. Use when asked to "add an endpoint", "create a new route", "expose an API for X", or similar net-new API surface work. Not for pure bug fixes to an existing endpoint.
+description: Step-by-step workflow for adding a new API endpoint/route end-to-end — from contract design through implementation, validation, security, tests, and review. Use when asked to "add an endpoint", "create a new route", "expose an API for X", or similar net-new API surface work. Not for pure bug fixes to an existing endpoint. This is the **procedure**; `backend-api-design` holds the **standards** it applies — reach for that one when the question is what a good endpoint looks like rather than what to do next.
 ---
 
 # Workflow: New API Endpoint

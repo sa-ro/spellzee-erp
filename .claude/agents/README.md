@@ -30,6 +30,7 @@ silently. Feature work flows *through* those owners rather than around them.
 | `write-path-builder` | NestJS modules, the uniform write path, endpoints | Mixed by risk class |
 | `integration-builder` | Outbox/inbox, workers, Merithub adapter, stall queue | Mixed by risk class |
 | `erosion-auditor` | Auditing diffs against the trade-off library | Read-only |
+| `diff-vs-plan-reviewer` | Checking a finished diff against the plan it was meant to implement | Read-only |
 
 ### Order of use
 
@@ -163,7 +164,7 @@ and offers the honest choice — connect it, or accept a structural
 approximation that is labelled as such. Never claim pixel accuracy from a
 screenshot alone.
 
-### Why two agents are read-only
+### Why three agents are read-only
 
 `scope-interrogator` produces evidence, not decisions — a business question
 is not an agent's to answer.
@@ -172,6 +173,17 @@ is not an agent's to answer.
 the code will justify what it wrote. Spellzee's own product separates maker
 from checker for sensitive actions; the same applies to the agents building
 it. Giving the auditor write access would collapse that separation.
+
+`diff-vs-plan-reviewer` is read-only for the same reason, applied to a
+different rubric. It exists because `erosion-auditor`'s rubric is fixed to
+the trade-off library and its rules explicitly forbid reasoning about intent
+— so "did this actually do what was asked?" was owned by nobody. That is a
+distinct failure model, not a second opinion on the same one: a diff can
+reverse no decision at all and still quietly omit half of what was
+requested. The three reviews are deliberately separate rubrics —
+architecture (`erosion-auditor`), intent (`diff-vs-plan-reviewer`), and
+engineering quality (`workflow-pre-merge-review`) — and each is told to
+route findings belonging to the others rather than absorb them.
 
 ## Designed, not built (Tier 2 — once real code exists)
 

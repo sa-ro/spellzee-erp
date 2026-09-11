@@ -40,8 +40,14 @@
 - This gets you RTK Query's caching/invalidation/loading-state machinery while keeping axios's interceptor ergonomics (auth headers, error transforms) as the actual transport.
 - One `axiosBaseQuery` implementation shared across all API slices — don't reimplement it per feature.
 
-## Rule 4: Type Safety via Shared Types or OpenAPI Codegen
-- Generate types from an OpenAPI spec where the backend provides one; where not available, maintain a single shared `types/api.ts` per resource so multiple endpoints returning the same shape don't each redefine their own slightly-different interface.
+## Rule 4: Type Safety via Shared Types
+- **On this project the mechanism is `packages/contracts`, not OpenAPI codegen.** There is no
+  OpenAPI spec and no codegen step; the backend owns the response types and the web app imports
+  them across the monorepo boundary. See `backend/type-safety-contract`, which owns this seam.
+- Never re-declare a shape in `apps/web` that `packages/contracts` already exports — a local
+  copy is exactly the drift this rule exists to prevent.
+- (Generic guidance, for a project that does have a spec: generate types from OpenAPI where the
+  backend provides one; where not available, maintain a single shared `types/api.ts` per resource.)
 - Axios response types are explicitly typed on every call (`axios.get<ResponseType>(...)` or typed through the `axiosBaseQuery` wrapper) — never left as implicit `any`.
 
 ## Rule 5: Consistent Error Shape via the Axios Interceptor

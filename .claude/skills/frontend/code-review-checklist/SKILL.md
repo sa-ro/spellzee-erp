@@ -1,6 +1,6 @@
 ---
 name: code-review-checklist
-description: Use this skill whenever the user is reviewing a pull request, preparing a PR for review, giving or receiving code review feedback, or setting up a PR template/checklist. Trigger for phrases like "review this PR", "review this code", "what should I check before merging", "give feedback on this diff", "set up a PR template", or any request involving code review standards. Also trigger for Definition of Done review before merging.
+description: Use this skill whenever the user is reviewing a pull request, preparing a PR for review, giving or receiving code review feedback, or setting up a PR template/checklist. Trigger for phrases like "review this PR", "review this code", "what should I check before merging", "give feedback on this diff", "set up a PR template", or any request involving code review standards. **Frontend code only** — backend review belongs to `backend/testing-debugging-review`, the final pre-merge gate to `backend/workflow-pre-merge-review`, and architecture-erosion review to the `erosion-auditor` agent. Also trigger for Definition of Done review before merging.
 ---
 
 # Code Review Checklist Skill

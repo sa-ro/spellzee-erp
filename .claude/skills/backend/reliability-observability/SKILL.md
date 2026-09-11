@@ -1,6 +1,6 @@
 ---
 name: reliability-observability
-description: Use when designing for failure handling (timeouts, retries, circuit breakers, bulkheads, health checks, graceful shutdown, failover, DR, SLA/SLO/SLI, RTO/RPO) or when adding/reviewing logging, metrics, or tracing. Triggers on "reliability", "fault tolerant", "circuit breaker", "SLA", "SLO", "logging", "metrics", "tracing", "observability", "alert", "dashboard".
+description: Use when designing for failure handling (timeouts, retries, circuit breakers, bulkheads, health checks, graceful shutdown, failover, DR, SLA/SLO/SLI, RTO/RPO) or when adding/reviewing logging, metrics, or tracing. Triggers on "reliability", "fault tolerant", "circuit breaker", "SLA", "SLO", "logging", "metrics", "tracing", "observability", "alert", "ops dashboard", "monitoring dashboard". Note "dashboard" here means an **operational** one; a product dashboard of charts and tables for staff or parents is `frontend/data-viz-dashboards`.
 ---
 
 # Reliability & Observability

@@ -1,9 +1,30 @@
 ---
 name: infra-cost-ai-backend
-description: Use for cloud/infrastructure decisions (AWS, Docker, Kubernetes, Terraform, CI/CD, networking, IAM, multi-AZ/region), cost trade-off analysis, or building AI/LLM backend infrastructure (RAG, vector DBs, embedding pipelines, agents, MCP servers, model routing, AI gateways, LLM caching). Triggers on "deploy", "infrastructure", "terraform", "kubernetes", "docker", "cost", "budget", "RAG", "vector database", "embeddings", "LLM", "agent", "MCP server", "prompt injection".
+description: Use for cloud/infrastructure decisions (AWS, Docker, Kubernetes, Terraform, CI/CD, networking, IAM, multi-AZ/region), cost trade-off analysis, or building AI/LLM backend infrastructure (RAG, vector DBs, embedding pipelines, agents, MCP servers, model routing, AI gateways, LLM caching). Triggers on "deploy", "infrastructure", "terraform", "kubernetes", "docker", "cost", "budget", "RAG", "vector database", "embeddings", "LLM", "agent", "MCP server", "prompt injection". **Read the Spellzee scope note in the body first** — this project has no Docker, no Kubernetes and no CI yet, and its cloud provider is a deliberately deferred decision, so much of the generic guidance here is not yet applicable.
 ---
 
 # Cloud Infrastructure, Cost & AI-Era Backend
+
+## Scope note for Spellzee — read before applying anything below
+
+This skill is generic. On this project, most of it is **not yet applicable**, and reaching for
+it as written will produce advice that contradicts settled decisions:
+
+- **No Docker on this machine at all** (`project-conventions/references/conventions.md`).
+  PostgreSQL runs natively on port 5433. Testcontainers is unavailable and Docker-based advice
+  does not apply.
+- **Kubernetes and multi-region are explicitly rejected** in `CLAUDE.md`'s locked stack, and are
+  not up for casual revisit. Runtime is auto-scaling containers, single region.
+- **The cloud provider is a deliberately deferred decision.** `CLAUDE.md` says not to invent an
+  answer and not to treat the deferral as permission to guess. Object storage and the
+  observability vendor follow that decision.
+- **There is no CI.** No `.github/workflows`, no pipeline. `scripts/verify.sh` is the check that
+  exists today; it runs locally and from the `Stop` hook.
+- **One deployment rule is already settled and is not generic advice:** workers must not scale
+  to zero, or the outbox silently stops draining. See `spellzee-outbox-merithub`.
+
+What *is* useful here now: cost trade-off reasoning, and the AI/LLM sections if that work ever
+starts. Treat the cloud sections as a checklist for when the provider decision is made.
 
 ## Cloud & infrastructure
 
