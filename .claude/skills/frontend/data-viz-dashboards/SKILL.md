@@ -1,6 +1,6 @@
 ---
 name: data-viz-dashboards
-description: Use this skill whenever the user is building charts, analytics dashboards, or large data tables — teacher/admin progress dashboards, cohort performance charts, large sortable/filterable student lists, or KPI summary views. Trigger for phrases like "build a dashboard", "add a chart", "show student progress", "analytics view", "sortable table", "the table is slow with lots of rows", "Recharts", "TanStack Table", or any request involving charting libraries, large-dataset tables, or admin/teacher-facing analytics UI. Also trigger for Definition of Done review on a dashboard/data-viz feature.
+description: Use this skill whenever the user is building charts, analytics dashboards, or large data tables — teacher/admin progress dashboards, cohort performance charts, large sortable/filterable student lists, or KPI summary views. Trigger for phrases like "build a dashboard", "add a chart", "show student progress", "analytics view", "sortable table", "the table is slow with lots of rows", "Recharts", "TanStack Table", or any request involving charting libraries, large-dataset tables, or admin/teacher-facing analytics UI. Also trigger for Definition of Done review on a dashboard/data-viz feature. "Dashboard" here means a **product** screen for staff or parents; an operational monitoring/alerting dashboard is `backend/reliability-observability`.
 ---
 
 # Data Visualization & Dashboards Skill

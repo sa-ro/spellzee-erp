@@ -1,6 +1,6 @@
 ---
 name: testing-debugging-review
-description: Use when writing tests, debugging a production issue, or doing a manual/principal-level code review (as distinct from running the code-review skill/command). Triggers on "write tests", "test coverage", "production issue", "incident", "debug this", "review this code", "will this scale at 10x".
+description: Use when writing tests, debugging a production issue, or doing a manual/principal-level code review (as distinct from running the code-review skill/command). Triggers on "write tests", "test coverage", "debug this", "review this code", "will this scale at 10x". **Backend only.** Frontend test and review work belongs to `frontend/testing-frontend` and `frontend/code-review-checklist`; a live production incident belongs to `workflow-incident-response`; a final pre-merge pass belongs to `workflow-pre-merge-review`.
 ---
 
 # Testing, Production Debugging & Code Review

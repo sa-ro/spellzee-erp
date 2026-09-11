@@ -1,6 +1,6 @@
 ---
 name: backend-api-design
-description: Use when writing or reviewing backend service code or API endpoints — validation, error handling, auth, transactions, idempotency, timeouts/retries/rate limiting, or API contract design (REST/GraphQL/gRPC/WebSockets/SSE/webhooks, pagination, filtering, versioning, HTTP semantics). Triggers on "add an endpoint", "design this API", "backend service", "controller", "handler", "route".
+description: Use when writing or reviewing backend service code or API endpoints — validation, error handling, auth, transactions, idempotency, timeouts/retries/rate limiting, or API contract design (REST/GraphQL/gRPC/WebSockets/SSE/webhooks, pagination, filtering, versioning, HTTP semantics). Triggers on "design this API", "backend service", "controller", "handler", "route", "error shape", "pagination", "idempotency". For the **step-by-step procedure** of shipping a new endpoint end-to-end, use `workflow-new-endpoint` and treat this skill as the standard it applies; for the **shared response type**, use `type-safety-contract`; for the **client** calling it, `frontend/api-integration`.
 ---
 
 # Backend & API Engineering

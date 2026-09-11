@@ -1,6 +1,6 @@
 ---
 name: api-integration
-description: Use this skill whenever the user is fetching data via REST/axios, structuring TanStack Query calls (`useQuery`/`useMutation`/`queryClient`), implementing pagination or polling, handling auth/token refresh, uploading files, or building offline-resilient features for an EdTech product. Trigger for phrases like "how do I call this API", "how do I paginate this list", "handle token refresh", "upload this video", "the app breaks when offline", "mock this API for tests", or any request involving fetching, mutating, or syncing data with a backend. Also trigger for Definition of Done review on an API-integration feature.
+description: Use this skill whenever the user is fetching data via REST/axios, structuring TanStack Query calls (`useQuery`/`useMutation`/`queryClient`), implementing pagination or polling, handling auth/token refresh, uploading files, or building offline-resilient features for an EdTech product. Trigger for phrases like "how do I call this API", "how do I paginate this list", "handle token refresh", "upload this video", "the app breaks when offline", "mock this API for tests", or any request involving fetching, mutating, or syncing data with a backend. Also trigger for Definition of Done review on an API-integration feature. **Client side only** — this skill owns how the browser calls an endpoint. The endpoint's own design, validation and error shape belong to `backend/backend-api-design`, and the shared response type belongs to `backend/type-safety-contract`.
 ---
 
 # API Integration Skill

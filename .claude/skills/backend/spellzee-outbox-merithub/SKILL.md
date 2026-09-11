@@ -1,6 +1,6 @@
 ---
 name: spellzee-outbox-merithub
-description: Use for anything crossing the boundary to a third party — Merithub (LMS/classroom), FreeJump (calls), the future WhatsApp provider. Covers the transactional outbox, the deduplicating inbox, the four-state provisioning machine and its stall queue, webhook-plus-reconciliation-poll, and the never-call-upstream-DELETE rule. Triggers on "merithub", "webhook", "outbox", "external API", "third party", "integration", "sync", "provision", "class creation", "stalled", "retry", "reconcile".
+description: Use for anything crossing the boundary to a third party — Merithub (LMS/classroom), FreeJump (calls), the future WhatsApp provider. Covers the transactional outbox, the deduplicating inbox, the four-state provisioning machine and its stall queue, webhook-plus-reconciliation-poll, and the never-call-upstream-DELETE rule. Also owns clock-triggered work — the rolling-horizon job, the reconciliation poll, the outbox sweeper, reminder dispatch. Triggers on "merithub", "webhook", "outbox", "external API", "third party", "integration", "sync", "provision", "class creation", "stalled", "retry", "reconcile", "cron", "scheduled job", "recurring job", "horizon".
 ---
 
 # Spellzee Integration Edge — outbox, inbox, and the stall queue
@@ -124,6 +124,33 @@ non-retryable (4xx validation, auth) — retrying a 400 forever just fills the
 queue. Since upstream has no idempotency keys, **check whether the object
 already exists before recreating it** on retry; that check is our substitute
 for their missing guarantee.
+
+## Scheduled and recurring work
+
+The outbox covers work triggered *by a domain change*. A second category is triggered **by the
+clock**, and nothing else in the skill library owns it:
+
+- the **rolling-horizon job** that materialises sessions ahead of time (`CLAUDE.md` — sessions
+  are fanned out on write and a horizon job maintains them);
+- the **reconciliation poll** that catches webhooks the upstream dropped silently;
+- the **outbox sweeper** for rows whose `next_attempt_at` has passed;
+- **reminders** and retention triggers, whose timings are policy values, not constants
+  (`spellzee-policy-versioning`);
+- **stall-queue ageing** and the alert on outbox rows older than a threshold.
+
+The rules that make these safe are the same ones the outbox follows, plus two of their own:
+
+- **A scheduled job is not a source of truth.** It closes gaps; it does not decide business
+  outcomes that a command should have recorded. A job that reconciles is fine; a job that
+  invents a state transition nobody requested is a reconciliation job in the sense
+  `CLAUDE.md` rejects.
+- **Every run must be idempotent and safe to run twice**, because it will be — overlapping
+  runs, a redeploy mid-run, a manual trigger. Claim rows with `FOR UPDATE SKIP LOCKED` rather
+  than assuming a single runner.
+- **They live in the workers deployable**, never in the API process, and the workers must not
+  scale to zero.
+- **A missed run must be detectable.** A job whose only evidence of having run is that nothing
+  looks wrong cannot be monitored. Record last-run and last-success.
 
 ## Anti-patterns
 
